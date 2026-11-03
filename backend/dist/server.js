@@ -90,9 +90,9 @@ const startServer = async () => {
     try {
         await (0, index_1.initDatabase)();
         const HOST = process.env.HOST || '0.0.0.0';
-        app.listen(Number(PORT), HOST, () => {
+        app.listen(Number(PORT), () => {
             console.log(`===============================================`);
-            console.log(`🚀 LISON Server running on http://${HOST}:${PORT}`);
+            console.log(`🚀 LISON Server running on port ${PORT}`);
             console.log(`📚 Relational Database connected & verified.`);
             console.log(`===============================================`);
         });
