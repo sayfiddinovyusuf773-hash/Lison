@@ -1,9 +1,16 @@
 import bcrypt from 'bcryptjs';
 import { db, initDatabase, executeRun } from './index';
 
-export const runSeed = async (): Promise<void> => {
-  await initDatabase();
-  console.log('Seeding initial educational data...');
+let isSeeding = false;
+
+export const runSeed = async (skipInit = false): Promise<void> => {
+  if (isSeeding) return;
+  isSeeding = true;
+  try {
+    if (!skipInit) {
+      await initDatabase();
+    }
+    console.log('Seeding initial educational data...');
 
   const passwordHash = await bcrypt.hash('admin123', 10);
   const teacherPassHash = await bcrypt.hash('teacher123', 10);
@@ -801,6 +808,9 @@ export const runSeed = async (): Promise<void> => {
   }
 
   console.log('Seeding completed successfully!');
+  } finally {
+    isSeeding = false;
+  }
 };
 
 if (require.main === module || process.argv[1]?.endsWith('seed.ts')) {

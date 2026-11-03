@@ -449,7 +449,7 @@ const initDatabase = async () => {
                     if (!userCount || userCount.count === 0) {
                         console.log('Database is empty. Running initial educational seed...');
                         const { runSeed } = await import('./seed.js');
-                        await runSeed();
+                        await runSeed(true);
                     }
                 }
                 catch (seedErr) {
