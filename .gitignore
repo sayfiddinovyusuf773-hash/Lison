@@ -19,9 +19,9 @@ yarn-error.log*
 *.sqlite
 *.sqlite3
 
-# Build outputs (built during deploy via `npm run build`)
-dist/
-*/dist/
+# Build outputs committed for instant zero-RAM cloud deploy on Render
+# dist/
+# */dist/
 build/
 */build/
 

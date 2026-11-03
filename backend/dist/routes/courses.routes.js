@@ -1,0 +1,255 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const index_1 = require("../db/index");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+// Get all courses (with search, language, level, sorting)
+router.get('/', auth_1.optionalAuth, async (req, res) => {
+    try {
+        const { search, language, level, teacher_id, sort } = req.query;
+        let sql = `
+      SELECT c.*, t.name as teacher_name, t.avatar as teacher_avatar, t.title as teacher_title
+      FROM courses c
+      LEFT JOIN teachers t ON c.teacher_id = t.id
+      WHERE c.deleted_at IS NULL AND c.is_published = 1
+    `;
+        const params = [];
+        if (search) {
+            sql += ` AND (c.title LIKE ? OR c.description LIKE ? OR c.language LIKE ?)`;
+            const term = `%${search}%`;
+            params.push(term, term, term);
+        }
+        if (language && language !== 'all') {
+            sql += ` AND LOWER(c.language) = LOWER(?)`;
+            params.push(language);
+        }
+        if (level && level !== 'all') {
+            sql += ` AND c.level = ?`;
+            params.push(level);
+        }
+        if (teacher_id) {
+            sql += ` AND c.teacher_id = ?`;
+            params.push(teacher_id);
+        }
+        // Sorting
+        if (sort === 'newest') {
+            sql += ` ORDER BY c.created_at DESC`;
+        }
+        else if (sort === 'rating') {
+            sql += ` ORDER BY c.rating DESC`;
+        }
+        else if (sort === 'difficulty_asc') {
+            sql += ` ORDER BY c.level ASC`;
+        }
+        else {
+            sql += ` ORDER BY c.enrollment_count DESC, c.created_at DESC`;
+        }
+        const courses = await (0, index_1.queryAll)(sql, params);
+        // If logged in, attach enrollment info
+        if (req.user) {
+            const enrollments = await (0, index_1.queryAll)(`SELECT course_id, progress_percent, is_completed, is_wishlist FROM enrollments WHERE user_id = ?`, [req.user.id]);
+            const enrMap = new Map(enrollments.map((e) => [e.course_id, e]));
+            courses.forEach((c) => {
+                const enr = enrMap.get(c.id);
+                c.is_enrolled = !!enr;
+                c.progress_percent = enr ? enr.progress_percent : 0;
+                c.is_completed = enr ? !!enr.is_completed : false;
+                c.is_wishlist = enr ? !!enr.is_wishlist : false;
+            });
+        }
+        res.json({ success: true, count: courses.length, courses });
+    }
+    catch (err) {
+        console.error('Fetch courses error:', err);
+        res.status(500).json({ success: false, message: 'Kurslarni yuklab bo\'lmadi.' });
+    }
+});
+// Get single course details with curriculum
+router.get('/:id', auth_1.optionalAuth, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        const course = await (0, index_1.queryOne)(`SELECT c.*, t.name as teacher_name, t.avatar as teacher_avatar, t.title as teacher_title, t.bio as teacher_bio
+       FROM courses c
+       LEFT JOIN teachers t ON c.teacher_id = t.id
+       WHERE (c.id = ? OR c.slug = ?) AND c.deleted_at IS NULL`, [courseId, courseId]);
+        if (!course) {
+            res.status(404).json({ success: false, message: 'Kurs topilmadi.' });
+            return;
+        }
+        try {
+            course.objectives = JSON.parse(course.objectives || '[]');
+        }
+        catch {
+            course.objectives = [];
+        }
+        // Fetch modules and lessons
+        const modules = await (0, index_1.queryAll)(`SELECT * FROM course_modules WHERE course_id = ? ORDER BY order_index ASC`, [course.id]);
+        const lessons = await (0, index_1.queryAll)(`SELECT id, module_id, course_id, title, order_index, duration_minutes, video_url
+       FROM lessons WHERE course_id = ? ORDER BY order_index ASC`, [course.id]);
+        // Map user progress if authenticated
+        let userProgressMap = new Map();
+        let enrollment = null;
+        let pendingRequest = null;
+        if (req.user) {
+            enrollment = await (0, index_1.queryOne)(`SELECT * FROM enrollments WHERE user_id = ? AND course_id = ?`, [req.user.id, course.id]);
+            const progressRows = await (0, index_1.queryAll)(`SELECT lesson_id, is_completed FROM lesson_progress WHERE user_id = ? AND course_id = ?`, [req.user.id, course.id]);
+            userProgressMap = new Map(progressRows.map((p) => [p.lesson_id, p.is_completed]));
+            pendingRequest = await (0, index_1.queryOne)(`SELECT id, status, payment_method, phone, created_at FROM enrollment_requests WHERE user_id = ? AND course_id = ? ORDER BY created_at DESC LIMIT 1`, [req.user.id, course.id]);
+        }
+        const curriculum = modules.map((m) => {
+            const moduleLessons = lessons
+                .filter((l) => l.module_id === m.id)
+                .map((l) => ({
+                ...l,
+                is_completed: userProgressMap.get(l.id) === 1
+            }));
+            return {
+                ...m,
+                lessons: moduleLessons
+            };
+        });
+        course.curriculum = curriculum;
+        course.is_enrolled = !!enrollment;
+        course.progress_percent = enrollment ? enrollment.progress_percent : 0;
+        course.last_accessed_lesson_id = enrollment ? enrollment.last_accessed_lesson_id : null;
+        course.is_wishlist = enrollment ? !!enrollment.is_wishlist : false;
+        course.pending_request = pendingRequest || null;
+        res.json({ success: true, course });
+    }
+    catch (err) {
+        console.error('Fetch course detail error:', err);
+        res.status(500).json({ success: false, message: 'Kurs ma\'lumotlarini yuklab bo\'lmadi.' });
+    }
+});
+// Enroll in course
+router.post('/:id/enroll', auth_1.authenticateToken, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        const userId = req.user.id;
+        const course = await (0, index_1.queryOne)(`SELECT id, title, total_lessons, is_paid, price FROM courses WHERE id = ?`, [courseId]);
+        if (!course) {
+            res.status(404).json({ success: false, message: 'Kurs topilmadi.' });
+            return;
+        }
+        // Check if course is paid and user is not yet approved
+        if (course.is_paid === 1) {
+            const existingEnr = await (0, index_1.queryOne)(`SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?`, [userId, courseId]);
+            if (!existingEnr) {
+                res.status(402).json({
+                    success: false,
+                    is_paid: true,
+                    price: course.price,
+                    message: 'Ushbu kurs pullik. Kursga a\'zo bo\'lish uchun administratorga to\'lov so\'rovini yuboring.'
+                });
+                return;
+            }
+        }
+        const firstLesson = await (0, index_1.queryOne)(`SELECT id FROM lessons WHERE course_id = ? ORDER BY order_index ASC LIMIT 1`, [courseId]);
+        const existing = await (0, index_1.queryOne)(`SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?`, [userId, courseId]);
+        if (!existing) {
+            const enrId = 'enr-' + Date.now();
+            await (0, index_1.executeRun)(`INSERT INTO enrollments (id, user_id, course_id, progress_percent, is_completed, last_accessed_lesson_id)
+         VALUES (?, ?, ?, 0, 0, ?)`, [enrId, userId, courseId, firstLesson ? firstLesson.id : null]);
+            // Increment enrollment count
+            await (0, index_1.executeRun)(`UPDATE courses SET enrollment_count = enrollment_count + 1 WHERE id = ?`, [courseId]);
+            // Notification
+            await (0, index_1.executeRun)(`INSERT INTO notifications (id, user_id, title, message, type, link_url)
+         VALUES (?, ?, 'Kursga a\'zo bo\'ldingiz!', ?, 'course', ?)`, [
+                'notif-' + Date.now(),
+                userId,
+                `"${course.title}" kursiga muvaffaqiyatli a'zo bo'ldingiz. O'rganishni boshlang!`,
+                `/courses/${courseId}`
+            ]);
+        }
+        res.json({
+            success: true,
+            message: 'Kursga muvaffaqiyatli a\'zo bo\'ldingiz!',
+            first_lesson_id: firstLesson ? firstLesson.id : null
+        });
+    }
+    catch (err) {
+        console.error('Enrollment error:', err);
+        res.status(500).json({ success: false, message: 'A\'zo bo\'lishda xatolik yuz berdi.' });
+    }
+});
+// Submit Paid Course Enrollment / Payment Request (Admin is immediately notified)
+router.post('/:id/enrollment-request', auth_1.authenticateToken, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        const userId = req.user.id;
+        const { phone, payment_method, note } = req.body;
+        if (!phone || !phone.trim()) {
+            res.status(400).json({ success: false, message: 'Telefon raqamini kiritish majburiy.' });
+            return;
+        }
+        const course = await (0, index_1.queryOne)(`SELECT id, title, is_paid, price, currency FROM courses WHERE id = ?`, [courseId]);
+        if (!course) {
+            res.status(404).json({ success: false, message: 'Kurs topilmadi.' });
+            return;
+        }
+        // Check if user is already enrolled
+        const existingEnr = await (0, index_1.queryOne)(`SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?`, [userId, courseId]);
+        if (existingEnr) {
+            res.json({
+                success: true,
+                already_enrolled: true,
+                message: 'Siz ushbu kursga allaqachon a\'zo bo\'lgansiz.'
+            });
+            return;
+        }
+        const currentUser = await (0, index_1.queryOne)(`SELECT id, first_name, last_name, email FROM users WHERE id = ?`, [userId]);
+        const fullName = `${currentUser?.first_name || ''} ${currentUser?.last_name || ''}`.trim() || 'Foydalanuvchi';
+        const email = currentUser?.email || '';
+        const selectedMethod = payment_method || 'Click';
+        const amount = course.price || 0;
+        const currency = course.currency || 'UZS';
+        const requestId = 'req-' + Date.now();
+        // Insert into enrollment_requests
+        await (0, index_1.executeRun)(`INSERT INTO enrollment_requests (id, user_id, course_id, user_name, user_email, phone, payment_method, amount, currency, status, admin_note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`, [requestId, userId, courseId, fullName, email, phone.trim(), selectedMethod, amount, currency, note || null]);
+        // Notify ALL Admins & Super Admins immediately!
+        const admins = await (0, index_1.queryAll)(`SELECT id FROM users WHERE role IN ('admin', 'super_admin')`);
+        for (const admin of admins) {
+            const notifId = 'notif-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+            const notifMsg = `${fullName} (${phone}) "${course.title}" kursi uchun to'lov so'rovi yubordi. Narxi: ${amount.toLocaleString()} ${currency} (${selectedMethod}).`;
+            await (0, index_1.executeRun)(`INSERT INTO notifications (id, user_id, title, message, type, link_url)
+         VALUES (?, ?, ?, ?, ?, ?)`, [notifId, admin.id, "Yangi to'lov & kurs so'rovi!", notifMsg, 'payment_request', '/admin']);
+        }
+        // Insert into audit logs
+        const auditId = 'log-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+        await (0, index_1.executeRun)(`INSERT INTO audit_logs (id, user_id, action, resource, details)
+       VALUES (?, ?, 'ENROLLMENT_REQUEST', 'courses', ?)`, [auditId, userId, JSON.stringify({ courseId, courseTitle: course.title, amount, phone, payment_method: selectedMethod })]);
+        res.json({
+            success: true,
+            request_id: requestId,
+            message: 'So\'rovingiz administratorga muvaffaqiyatli yuborildi! Administrator to\'lovni tasdiqlagach, kursingiz avtomatik ochiladi.'
+        });
+    }
+    catch (err) {
+        console.error('Enrollment request error:', err);
+        res.status(500).json({ success: false, message: 'So\'rov yuborishda xatolik yuz berdi.' });
+    }
+});
+// Toggle wishlist
+router.post('/:id/wishlist', auth_1.authenticateToken, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        const userId = req.user.id;
+        const enr = await (0, index_1.queryOne)(`SELECT id, is_wishlist FROM enrollments WHERE user_id = ? AND course_id = ?`, [userId, courseId]);
+        if (enr) {
+            const nextState = enr.is_wishlist ? 0 : 1;
+            await (0, index_1.executeRun)(`UPDATE enrollments SET is_wishlist = ? WHERE id = ?`, [nextState, enr.id]);
+            res.json({ success: true, is_wishlist: nextState === 1 });
+        }
+        else {
+            const enrId = 'enr-' + Date.now();
+            await (0, index_1.executeRun)(`INSERT INTO enrollments (id, user_id, course_id, is_wishlist, progress_percent) VALUES (?, ?, ?, 1, 0)`, [enrId, userId, courseId]);
+            res.json({ success: true, is_wishlist: true });
+        }
+    }
+    catch (err) {
+        res.status(500).json({ success: false, message: 'Saqlashda xatolik.' });
+    }
+});
+exports.default = router;

@@ -9,7 +9,8 @@
     "install:all": "npm install && npm --prefix backend install && npm --prefix frontend install",
     "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
     "build:backend": "npm --prefix backend install && npm --prefix backend run build",
-    "build": "npm --prefix backend install && npm --prefix backend run build && npm --prefix frontend install && npm --prefix frontend run build",
+    "build": "npm --prefix backend install --omit=dev",
+    "build:all": "npm --prefix backend install && npm --prefix backend run build && npm --prefix frontend install && npm --prefix frontend run build",
     "start": "node backend/dist/server.js"
   },
   "dependencies": {
