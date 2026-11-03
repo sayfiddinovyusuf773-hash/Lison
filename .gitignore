@@ -18,6 +18,7 @@ yarn-error.log*
 *.db-shm
 *.sqlite
 *.sqlite3
+!backend/ziyo_academy.db
 
 # Build outputs committed for instant zero-RAM cloud deploy on Render
 # dist/
