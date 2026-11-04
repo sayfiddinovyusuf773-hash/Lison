@@ -24,6 +24,9 @@ services:
     staticPublishPath: frontend/dist
     routes:
       - type: rewrite
+        source: /api/*
+        destination: https://lison.onrender.com/api/*
+      - type: rewrite
         source: /*
         destination: /index.html
     headers:
