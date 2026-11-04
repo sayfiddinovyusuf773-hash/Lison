@@ -1,0 +1,17 @@
+name: LISON 24/7 Keep-Alive
+
+on:
+  schedule:
+    # Run every 14 minutes to prevent Render Free tier from sleeping (15 min idle threshold)
+    - cron: '*/14 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    name: Ping LISON API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Health Endpoint
+        run: |
+          response=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nTIME:%{time_total}s" "https://lison.onrender.com/api/health")
+          echo "$response"

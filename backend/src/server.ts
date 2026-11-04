@@ -4,6 +4,7 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import https from 'https';
 
 import { initDatabase } from './db/index';
 import authRoutes from './routes/auth.routes';
@@ -123,3 +124,19 @@ initDatabase()
   .catch((error) => {
     console.error('Database initialization notice:', error);
   });
+
+// Automated 24/7 Keep-Alive: Pings external URL every 10 minutes to prevent Render from sleeping
+const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || 'https://lison.onrender.com';
+const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+setInterval(() => {
+  try {
+    https.get(`${KEEP_ALIVE_URL}/api/health`, (res) => {
+      console.log(`[Auto-KeepAlive] Pinged ${KEEP_ALIVE_URL}/api/health — Status: ${res.statusCode}`);
+    }).on('error', (err) => {
+      console.warn('[Auto-KeepAlive] Ping warning:', err.message);
+    });
+  } catch (e: any) {
+    console.warn('[Auto-KeepAlive] Unexpected error:', e.message);
+  }
+}, KEEP_ALIVE_INTERVAL);

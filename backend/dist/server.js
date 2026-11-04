@@ -9,6 +9,7 @@ const compression_1 = __importDefault(require("compression"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
+const https_1 = __importDefault(require("https"));
 const index_1 = require("./db/index");
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const courses_routes_1 = __importDefault(require("./routes/courses.routes"));
@@ -115,3 +116,18 @@ app.listen(Number(PORT), HOST, () => {
     .catch((error) => {
     console.error('Database initialization notice:', error);
 });
+// Automated 24/7 Keep-Alive: Pings external URL every 10 minutes to prevent Render from sleeping
+const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || 'https://lison.onrender.com';
+const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000; // 10 minutes
+setInterval(() => {
+    try {
+        https_1.default.get(`${KEEP_ALIVE_URL}/api/health`, (res) => {
+            console.log(`[Auto-KeepAlive] Pinged ${KEEP_ALIVE_URL}/api/health — Status: ${res.statusCode}`);
+        }).on('error', (err) => {
+            console.warn('[Auto-KeepAlive] Ping warning:', err.message);
+        });
+    }
+    catch (e) {
+        console.warn('[Auto-KeepAlive] Unexpected error:', e.message);
+    }
+}, KEEP_ALIVE_INTERVAL);
