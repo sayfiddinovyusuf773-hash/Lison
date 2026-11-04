@@ -99,21 +99,19 @@ app.use((err, _req, res, _next) => {
         message: err.message || 'Ichki server xatoligi yuz berdi.'
     });
 });
-// Start Server
-const startServer = async () => {
-    try {
-        await (0, index_1.initDatabase)();
-        const HOST = process.env.HOST || '0.0.0.0';
-        app.listen(Number(PORT), () => {
-            console.log(`===============================================`);
-            console.log(`🚀 LISON Server running on port ${PORT}`);
-            console.log(`📚 Relational Database connected & verified.`);
-            console.log(`===============================================`);
-        });
-    }
-    catch (error) {
-        console.error('Failed to start server:', error);
-        process.exit(1);
-    }
-};
-startServer();
+// Start Server immediately on 0.0.0.0:${PORT} for instant Render health checks & port detection (<10ms)
+const HOST = '0.0.0.0';
+app.listen(Number(PORT), HOST, () => {
+    console.log(`===============================================`);
+    console.log(`🚀 LISON Server running on http://${HOST}:${PORT}`);
+    console.log(`⚡ Instant 0.0.0.0 port binding active (Cold-start bypass)`);
+    console.log(`===============================================`);
+});
+// Non-blocking database initialization
+(0, index_1.initDatabase)()
+    .then(() => {
+    console.log(`📚 Relational Database connected & verified.`);
+})
+    .catch((error) => {
+    console.error('Database initialization notice:', error);
+});

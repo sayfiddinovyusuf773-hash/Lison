@@ -1,4 +1,5 @@
 services:
+  # 1. Primary Full-Stack Web Service (Backend API & Monolithic Fallback)
   - type: web
     name: lison
     runtime: node
@@ -9,9 +10,26 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: JWT_SECRET
-        generateValue: true
       - key: HOST
         value: 0.0.0.0
+      - key: JWT_SECRET
+        generateValue: true
       - key: GEMINI_API_KEY
         sync: false
+
+  # 2. Render Static Site (Zero Cold-Start Global CDN Frontend)
+  - type: static
+    name: lison-static
+    buildCommand: npm --prefix frontend install && npm --prefix frontend run build
+    staticPublishPath: frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
