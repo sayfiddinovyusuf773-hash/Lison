@@ -11,28 +11,51 @@ interface PopularCoursesProps {
 export const PopularCourses: React.FC<PopularCoursesProps> = ({ navigate }) => {
   const { t } = useLanguage();
   const { user, openAuthModal } = useAuth();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<Course[]>(() => {
+    try {
+      const cached = localStorage.getItem('lison_cached_popular_courses');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(() => courses.length === 0);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem('lison_token') || localStorage.getItem('ziyo_token');
         const headers: any = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const res = await fetch('/api/courses?sort=popularity', { headers });
+        const res = await fetch('/api/courses?sort=popularity', {
+          headers,
+          signal: controller.signal
+        });
         const data = await res.json();
         if (data.success && data.courses) {
-          setCourses(data.courses.slice(0, 4));
+          const top4 = data.courses.slice(0, 4);
+          setCourses(top4);
+          localStorage.setItem('lison_cached_popular_courses', JSON.stringify(top4));
         }
-      } catch (err) {
-        console.error('Failed to fetch popular courses:', err);
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.warn('Failed to fetch popular courses:', err);
+        }
       } finally {
+        clearTimeout(timeoutId);
         setLoading(false);
       }
     };
     fetchCourses();
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   const handleCourseAction = (course: Course) => {

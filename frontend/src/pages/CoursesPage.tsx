@@ -25,8 +25,15 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
   const { t } = useLanguage();
   const { user, openAuthModal } = useAuth();
 
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<Course[]>(() => {
+    try {
+      const cached = localStorage.getItem('lison_cached_all_courses');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(() => courses.length === 0);
   const [search, setSearch] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState<string>(initialLang || 'all');
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
@@ -50,7 +57,10 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
   const levelsList = ['all', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
   const fetchCourses = async () => {
-    setLoading(true);
+    if (courses.length === 0) setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 9000);
+
     try {
       const token = localStorage.getItem('lison_token') || localStorage.getItem('ziyo_token');
       const headers: any = {};
@@ -61,14 +71,20 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
       if (selectedLanguage !== 'all') url += `&language=${encodeURIComponent(selectedLanguage)}`;
       if (selectedLevel !== 'all') url += `&level=${encodeURIComponent(selectedLevel)}`;
 
-      const res = await fetch(url, { headers });
+      const res = await fetch(url, { headers, signal: controller.signal });
       const data = await res.json();
       if (data.success && data.courses) {
         setCourses(data.courses);
+        if (selectedLanguage === 'all' && selectedLevel === 'all' && !search.trim()) {
+          localStorage.setItem('lison_cached_all_courses', JSON.stringify(data.courses));
+        }
       }
-    } catch (err) {
-      console.error('Fetch courses error:', err);
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.warn('Fetch courses error:', err);
+      }
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };

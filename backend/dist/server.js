@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const compression_1 = __importDefault(require("compression"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -23,6 +24,8 @@ const admin_routes_1 = __importDefault(require("./routes/admin.routes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
+// Gzip / Deflate compression for ultra-fast network transfer
+app.use((0, compression_1.default)());
 // Security Middleware
 app.use((0, cors_1.default)({
     origin: true,
@@ -67,7 +70,18 @@ for (const p of possibleFrontendDistPaths) {
 }
 if (frontendDistPath) {
     console.log(`Serving frontend static build from: ${frontendDistPath}`);
-    app.use(express_1.default.static(frontendDistPath));
+    app.use(express_1.default.static(frontendDistPath, {
+        maxAge: '1y',
+        immutable: true,
+        setHeaders: (res, filePath) => {
+            if (filePath.endsWith('.html')) {
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            }
+            else {
+                res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            }
+        }
+    }));
     // Catch-all fallback for client-side React routing (compatible with Express 5)
     app.use((req, res, next) => {
         if (req.method === 'GET' && !req.path.startsWith('/api/')) {

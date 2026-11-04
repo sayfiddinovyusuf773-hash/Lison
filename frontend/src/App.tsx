@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -7,19 +7,31 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 
+// HomePage is loaded eagerly for instant first-paint
 import { HomePage } from './pages/HomePage';
-import { CoursesPage } from './pages/CoursesPage';
-import { CourseDetailPage } from './pages/CourseDetailPage';
-import { LessonPlayerPage } from './pages/LessonPlayerPage';
-import { QuizEnginePage } from './pages/QuizEnginePage';
-import { AITeacherPage } from './pages/AITeacherPage';
-import { SpeakingStudioPage } from './pages/SpeakingStudioPage';
-import { StudentDashboardPage } from './pages/StudentDashboardPage';
-import { LeaderboardPage } from './pages/LeaderboardPage';
-import { TeachersPage } from './pages/TeachersPage';
-import { AboutPage } from './pages/AboutPage';
-import { VerifyCertificatePage } from './pages/VerifyCertificatePage';
-import { AdminDashboardPage } from './pages/AdminDashboardPage';
+
+// Route-based code-splitting for high-speed performance & low initial bundle size
+const CoursesPage = lazy(() => import('./pages/CoursesPage').then(m => ({ default: m.CoursesPage })));
+const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage').then(m => ({ default: m.CourseDetailPage })));
+const LessonPlayerPage = lazy(() => import('./pages/LessonPlayerPage').then(m => ({ default: m.LessonPlayerPage })));
+const QuizEnginePage = lazy(() => import('./pages/QuizEnginePage').then(m => ({ default: m.QuizEnginePage })));
+const AITeacherPage = lazy(() => import('./pages/AITeacherPage').then(m => ({ default: m.AITeacherPage })));
+const SpeakingStudioPage = lazy(() => import('./pages/SpeakingStudioPage').then(m => ({ default: m.SpeakingStudioPage })));
+const StudentDashboardPage = lazy(() => import('./pages/StudentDashboardPage').then(m => ({ default: m.StudentDashboardPage })));
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
+const TeachersPage = lazy(() => import('./pages/TeachersPage').then(m => ({ default: m.TeachersPage })));
+const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const VerifyCertificatePage = lazy(() => import('./pages/VerifyCertificatePage').then(m => ({ default: m.VerifyCertificatePage })));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
+
+const PageLoadingFallback: React.FC = () => (
+  <div className="min-h-[50vh] flex flex-col items-center justify-center p-8 space-y-3">
+    <div className="w-9 h-9 border-3 border-[#635BFF] border-t-transparent rounded-full animate-spin" />
+    <span className="text-xs font-semibold text-[#5A627A] dark:text-[#9DA6BD] animate-pulse">
+      LISON yuklanmoqda...
+    </span>
+  </div>
+);
 
 export const AppContent: React.FC = () => {
   const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname || '/');
@@ -94,7 +106,9 @@ export const AppContent: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-[#F7F8FC] dark:bg-[#0B1020] text-[#171A2B] dark:text-[#F7F8FC] selection:bg-[#635BFF] selection:text-white transition-colors duration-200">
       <Navbar currentPath={currentPath} navigate={navigate} />
       <main className="flex-1">
-        {renderRoute()}
+        <Suspense fallback={<PageLoadingFallback />}>
+          {renderRoute()}
+        </Suspense>
       </main>
       <Footer navigate={navigate} />
       <AuthModal />

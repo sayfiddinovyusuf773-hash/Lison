@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -21,6 +22,9 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Gzip / Deflate compression for ultra-fast network transfer
+app.use(compression());
 
 // Security Middleware
 app.use(cors({
@@ -72,7 +76,17 @@ for (const p of possibleFrontendDistPaths) {
 
 if (frontendDistPath) {
   console.log(`Serving frontend static build from: ${frontendDistPath}`);
-  app.use(express.static(frontendDistPath));
+  app.use(express.static(frontendDistPath, {
+    maxAge: '1y',
+    immutable: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }));
   // Catch-all fallback for client-side React routing (compatible with Express 5)
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.method === 'GET' && !req.path.startsWith('/api/')) {
