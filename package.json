@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently -n \"backend,frontend\" -c \"blue,green\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "seed": "npm --prefix backend run seed",
-    "build": "npm install --omit=dev && npm --prefix backend install --omit=dev",
+    "build": "npm install --omit=dev && npm --prefix backend install --omit=dev && npm --prefix backend rebuild sqlite3 --build-from-source",
     "start": "node backend/dist/server.js"
   },
   "dependencies": {
@@ -16,6 +16,6 @@
     "dotenv": "^18.0.9",
     "express": "^5.3.0",
     "jsonwebtoken": "^9.0.3",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "5.1.7"
   }
 }
