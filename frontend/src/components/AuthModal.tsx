@@ -55,13 +55,6 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  const handleQuickLogin = (quickEmail: string, quickPass: string) => {
-    setEmail(quickEmail);
-    setPassword(quickPass);
-    setMode('login');
-    login(quickEmail, quickPass);
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="relative w-full max-w-md p-6 bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
@@ -232,36 +225,11 @@ export const AuthModal: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white font-medium text-sm rounded-xl shadow-lg shadow-primary-500/25 transition disabled:opacity-50"
+            className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white font-medium text-sm rounded-xl shadow-lg shadow-primary-500/25 transition disabled:opacity-50 cursor-pointer"
           >
             {loading ? 'Kutilmoqda...' : mode === 'login' ? 'Kirish' : 'Hisob Yaratish'}
           </button>
         </form>
-
-        {/* Fast Test Account Selectors */}
-        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800 text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Tezkor sinov hisoblariga kirish:</p>
-          <div className="flex flex-wrap gap-2 justify-center">
-            <button
-              onClick={() => handleQuickLogin('student@ziyo.uz', 'student123')}
-              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition"
-            >
-              Talaba (Sardor)
-            </button>
-            <button
-              onClick={() => handleQuickLogin('anvar.teacher@ziyo.uz', 'teacher123')}
-              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition"
-            >
-              Ustoz (Anvar)
-            </button>
-            <button
-              onClick={() => handleQuickLogin('admin@ziyo.uz', 'admin123')}
-              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 transition"
-            >
-              Administrator
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

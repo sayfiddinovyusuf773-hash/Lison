@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.formatYouTubeEmbedUrl = void 0;
 const express_1 = require("express");
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const index_1 = require("../db/index");
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
@@ -550,6 +554,62 @@ router.get('/submissions', async (_req, res) => {
     catch (err) {
         console.error('Fetch admin submissions error:', err);
         res.status(500).json({ success: false, message: 'Topshiriqlar ro\'yxatini yuklab bo\'lmadi.' });
+    }
+});
+// 12. Admin Profile: Get and Update Credentials (Email, Password, Name)
+router.get('/profile', async (req, res) => {
+    try {
+        const adminId = req.user?.id;
+        const admin = await (0, index_1.queryOne)(`SELECT id, email, first_name, last_name, role, avatar, created_at FROM users WHERE id = ?`, [adminId]);
+        if (!admin) {
+            res.status(404).json({ success: false, message: 'Admin topilmadi.' });
+            return;
+        }
+        res.json({ success: true, admin });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, message: 'Admin ma\'lumotlarini yuklab bo\'lmadi.' });
+    }
+});
+router.put('/profile', async (req, res) => {
+    try {
+        const adminId = req.user?.id;
+        const { email, password, first_name, last_name } = req.body;
+        const current = await (0, index_1.queryOne)(`SELECT id, email FROM users WHERE id = ?`, [adminId]);
+        if (!current) {
+            res.status(404).json({ success: false, message: 'Admin topilmadi.' });
+            return;
+        }
+        if (email) {
+            const normalizedEmail = email.toLowerCase().trim();
+            const duplicate = await (0, index_1.queryOne)(`SELECT id FROM users WHERE email = ? AND id != ?`, [normalizedEmail, adminId]);
+            if (duplicate) {
+                res.status(400).json({ success: false, message: 'Bu email manzili boshqa foydalanuvchi tomonidan band qilingan.' });
+                return;
+            }
+            await (0, index_1.executeRun)(`UPDATE users SET email = ? WHERE id = ?`, [normalizedEmail, adminId]);
+        }
+        if (password && password.trim().length >= 6) {
+            const hash = await bcryptjs_1.default.hash(password.trim(), 10);
+            await (0, index_1.executeRun)(`UPDATE users SET password_hash = ? WHERE id = ?`, [hash, adminId]);
+        }
+        if (first_name) {
+            await (0, index_1.executeRun)(`UPDATE users SET first_name = ? WHERE id = ?`, [first_name.trim(), adminId]);
+        }
+        if (last_name) {
+            await (0, index_1.executeRun)(`UPDATE users SET last_name = ? WHERE id = ?`, [last_name.trim(), adminId]);
+        }
+        const updated = await (0, index_1.queryOne)(`SELECT id, email, first_name, last_name, role, avatar FROM users WHERE id = ?`, [adminId]);
+        await (0, auth_1.logAudit)(adminId || 'system', 'ADMIN_CREDENTIALS_UPDATE', 'users', JSON.stringify({ updated_email: updated.email }));
+        res.json({
+            success: true,
+            message: 'Admin ma\'lumotlari (email/parol) muvaffaqiyatli yangilandi.',
+            admin: updated
+        });
+    }
+    catch (err) {
+        console.error('Update admin profile error:', err);
+        res.status(500).json({ success: false, message: 'Profilni yangilashda xatolik yuz berdi.' });
     }
 });
 exports.default = router;

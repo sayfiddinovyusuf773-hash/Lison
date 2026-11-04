@@ -11,6 +11,7 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const https_1 = __importDefault(require("https"));
 const index_1 = require("./db/index");
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const courses_routes_1 = __importDefault(require("./routes/courses.routes"));
 const lessons_routes_1 = __importDefault(require("./routes/lessons.routes"));
@@ -110,8 +111,20 @@ app.listen(Number(PORT), HOST, () => {
 });
 // Non-blocking database initialization
 (0, index_1.initDatabase)()
-    .then(() => {
+    .then(async () => {
     console.log(`📚 Relational Database connected & verified.`);
+    // Sync Admin credentials from environment variables if configured
+    if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+        try {
+            const adminEmail = process.env.ADMIN_EMAIL.toLowerCase().trim();
+            const hash = await bcryptjs_1.default.hash(process.env.ADMIN_PASSWORD.trim(), 10);
+            await (0, index_1.executeRun)(`UPDATE users SET email = ?, password_hash = ? WHERE role = 'super_admin' OR id = 'usr-admin-1'`, [adminEmail, hash]);
+            console.log(`🔐 Super Admin credentials synchronized from environment variables: ${adminEmail}`);
+        }
+        catch (err) {
+            console.warn('Admin env sync notice:', err.message);
+        }
+    }
 })
     .catch((error) => {
     console.error('Database initialization notice:', error);
