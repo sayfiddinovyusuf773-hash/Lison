@@ -359,7 +359,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                 <button
                   onClick={() => openAuthModal('admin')}
                   className="px-2.5 py-1.5 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                  title="Administrator sifatida kirish (sayfiddinovyusuf773@gmail.com / 1234)"
+                  title="Administrator sifatida kirish"
                 >
                   <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                   <span>Admin</span>

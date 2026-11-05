@@ -72,8 +72,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md p-6 bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto w-full h-full">
+      <div className="relative w-full max-w-[94vw] sm:max-w-md mx-auto my-auto p-4 sm:p-6 md:p-7 bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden box-border">
         {/* Glow decoration */}
         <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 transition-all ${
           mode === 'admin'
@@ -89,14 +89,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
         </button>
 
         {/* Brand header */}
-        <div className="text-center mb-5">
-          <div className="flex justify-center mb-2.5">
+        <div className="text-center mb-4 sm:mb-5">
+          <div className="flex justify-center mb-2">
             <LisonLogo size="md" showTagline={false} />
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white flex items-center justify-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white flex items-center justify-center gap-2">
             {mode === 'admin' ? (
               <>
-                <Shield className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
                 <span>Admin Kirishi</span>
               </>
             ) : mode === 'login' ? (
@@ -105,17 +105,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
               'LISON da ro\'yxatdan o\'tish'
             )}
           </h2>
-          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-xs sm:max-w-sm mx-auto">
             {mode === 'admin'
-              ? 'Platformani to\'liq boshqarish uchun admin hisobingizga kiring'
+              ? 'Platformani boshqarish uchun shaxsiy admin hisobingizga kiring'
               : mode === 'login'
-              ? 'O\'rganishni davom ettirish uchun shaxsiy hisobingizga kiring'
+              ? 'O\'rganishni davom ettirish uchun hisobingizga kiring'
               : 'Bepul hisob oching va xalqaro tillarni o\'rganing'}
           </p>
         </div>
 
         {/* 3-Tab Switch: Kirish | Boshlash | Admin */}
-        <div className="grid grid-cols-3 p-1 mb-5 bg-gray-100 dark:bg-gray-800 rounded-2xl gap-1">
+        <div className="grid grid-cols-3 p-1 mb-5 bg-gray-100 dark:bg-gray-800 rounded-xl sm:rounded-2xl gap-1">
           <button
             type="button"
             onClick={() => { setMode('login'); setError(null); }}
@@ -167,14 +167,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
                   Ismingiz
                 </label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                  <UserIcon className="absolute left-3 top-3 sm:top-2.5 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     required
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Sardor"
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                    className="w-full pl-9 pr-3 py-2.5 sm:py-2 text-base sm:text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none box-border"
                   />
                 </div>
               </div>
@@ -188,7 +188,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Alimov"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full px-3 py-2.5 sm:py-2 text-base sm:text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none box-border"
                 />
               </div>
             </div>
@@ -196,21 +196,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              {mode === 'admin' ? 'Admin Gmail / Email manzil' : 'Gmail / Email manzil'}
+              {mode === 'admin' ? 'Admin Email manzil' : 'Gmail / Email manzil'}
             </label>
             <div className="relative">
               {mode === 'admin' ? (
-                <Shield className="absolute left-3 top-2.5 w-4 h-4 text-purple-500" />
+                <Shield className="absolute left-3 top-3 sm:top-2.5 w-4 h-4 text-purple-500" />
               ) : (
-                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <Mail className="absolute left-3 top-3 sm:top-2.5 w-4 h-4 text-gray-400" />
               )}
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={mode === 'admin' ? 'sayfiddinovyusuf773@gmail.com' : 'misol@gmail.com'}
-                className={`w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border rounded-xl outline-none transition ${
+                placeholder={mode === 'admin' ? 'admin@gmail.com' : 'misol@gmail.com'}
+                className={`w-full pl-9 pr-3 py-2.5 sm:py-2 text-base sm:text-sm bg-gray-50 dark:bg-gray-800/60 border rounded-xl outline-none transition box-border ${
                   mode === 'admin'
                     ? 'border-purple-200 dark:border-purple-800 focus:ring-2 focus:ring-purple-500'
                     : 'border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-[#635BFF]'
@@ -219,7 +219,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
             </div>
             <p className="mt-1 text-[11px] text-gray-400">
               {mode === 'admin'
-                ? "Admin hisobingizga biriktirilgan Gmail pochtangizni kiriting."
+                ? "Admin hisobingizga biriktirilgan maxfiy pochtangizni kiriting."
                 : mode === 'login'
                 ? "Har bir o'quvchi o'zining shaxsiy Gmail pochtasi va paroli bilan kiradi."
                 : "O'quvchilar yangi hisob yaratish uchun o'z Gmail pochtasini kiritadilar."}
@@ -228,28 +228,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              {mode === 'admin' ? 'Admin Parol (1234)' : 'Parol'}
+              {mode === 'admin' ? 'Admin Paroli' : 'Parol'}
             </label>
             <div className="relative">
-              <Lock className={`absolute left-3 top-2.5 w-4 h-4 ${mode === 'admin' ? 'text-purple-500' : 'text-gray-400'}`} />
+              <Lock className={`absolute left-3 top-3 sm:top-2.5 w-4 h-4 ${mode === 'admin' ? 'text-purple-500' : 'text-gray-400'}`} />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={mode === 'admin' ? '•••• (1234)' : '••••••••'}
-                className={`w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border rounded-xl outline-none transition ${
+                placeholder="••••••••"
+                className={`w-full pl-9 pr-3 py-2.5 sm:py-2 text-base sm:text-sm bg-gray-50 dark:bg-gray-800/60 border rounded-xl outline-none transition box-border ${
                   mode === 'admin'
                     ? 'border-purple-200 dark:border-purple-800 focus:ring-2 focus:ring-purple-500'
                     : 'border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-[#635BFF]'
                 }`}
               />
             </div>
-            {mode === 'admin' && (
-              <p className="mt-1 text-[11px] text-purple-600 dark:text-purple-400 font-medium">
-                Admin paroli: <strong>1234</strong>
-              </p>
-            )}
           </div>
 
           {mode === 'register' && (
@@ -261,7 +256,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
                 <select
                   value={learningLevel}
                   onChange={(e) => setLearningLevel(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full px-3 py-2.5 sm:py-2 text-base sm:text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none box-border"
                 >
                   <option value="A1">A1 - Boshlang'ich</option>
                   <option value="A2">A2 - Elementar</option>
@@ -276,7 +271,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
                 <select
                   value={preferredLanguage}
                   onChange={(e) => setPreferredLanguage(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full px-3 py-2.5 sm:py-2 text-base sm:text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none box-border"
                 >
                   <option value="uz">O'zbek tili</option>
                   <option value="en">English</option>
