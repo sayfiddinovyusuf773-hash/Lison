@@ -1,16 +1,17 @@
 import { Router, Response } from 'express';
 import { queryAll, queryOne, executeRun } from '../db/index';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
+import { getBeginnerQuestionsForLanguage } from '../utils/languageQuestions';
 
 const router = Router();
 
-// Get quiz questions (without revealing is_correct to avoid cheating)
+// Get quiz questions (includes is_correct for immediate step-by-step validation)
 router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const quizId = req.params.id;
 
     const quiz = await queryOne(
-      `SELECT q.*, c.title as course_title
+      `SELECT q.*, c.title as course_title, c.language as course_language
        FROM quizzes q
        JOIN courses c ON q.course_id = c.id
        WHERE q.id = ?`,
@@ -22,17 +23,44 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response): P
       return;
     }
 
-    const questions = await queryAll(
+    let questions = await queryAll(
       `SELECT id, quiz_id, question_type, question_text, audio_url, reading_passage, points, order_index
        FROM quiz_questions WHERE quiz_id = ? ORDER BY order_index ASC`,
       [quizId]
     );
 
+    // If quiz has no questions yet, auto-populate language-tailored beginner questions
+    if (questions.length === 0) {
+      const generated = getBeginnerQuestionsForLanguage(quiz.course_language || 'English', 1, quiz.title);
+      for (let i = 0; i < generated.length; i++) {
+        const g = generated[i];
+        const qId = 'qq-' + Date.now() + '-' + i;
+        await executeRun(
+          `INSERT INTO quiz_questions (id, quiz_id, question_type, question_text, points, explanation, order_index)
+           VALUES (?, ?, 'multiple_choice', ?, ?, ?, ?)`,
+          [qId, quiz.id, g.question_text, g.points, g.explanation, i + 1]
+        );
+        for (let j = 0; j < g.options.length; j++) {
+          const opt = g.options[j];
+          await executeRun(
+            `INSERT INTO quiz_options (id, question_id, option_text, is_correct, order_index)
+             VALUES (?, ?, ?, ?, ?)`,
+            ['qo-' + Date.now() + '-' + i + '-' + j, qId, opt.text, opt.is_correct ? 1 : 0, j + 1]
+          );
+        }
+      }
+      questions = await queryAll(
+        `SELECT id, quiz_id, question_type, question_text, audio_url, reading_passage, points, order_index
+         FROM quiz_questions WHERE quiz_id = ? ORDER BY order_index ASC`,
+        [quizId]
+      );
+    }
+
     const questionIds = questions.map((q: any) => `'${q.id}'`).join(',');
     let options: any[] = [];
     if (questionIds.length > 0) {
       options = await queryAll(
-        `SELECT id, question_id, option_text, match_pair, order_index
+        `SELECT id, question_id, option_text, is_correct, match_pair, order_index
          FROM quiz_options WHERE question_id IN (${questionIds}) ORDER BY order_index ASC`
       );
     }
@@ -44,6 +72,7 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response): P
         options: qOpts.map((o: any) => ({
           id: o.id,
           text: o.option_text,
+          is_correct: o.is_correct === 1,
           match_pair: o.match_pair
         }))
       };
@@ -159,9 +188,12 @@ router.post('/:id/submit', authenticateToken, async (req: AuthRequest, res: Resp
     }
 
     let xpEarned = 0;
+    let userCoins = 0;
     if (passed) {
       xpEarned = 50;
-      await executeRun(`UPDATE users SET xp_points = xp_points + ? WHERE id = ?`, [xpEarned, userId]);
+      await executeRun(`UPDATE users SET xp_points = xp_points + ?, coins = COALESCE(coins, 0) + 10 WHERE id = ?`, [xpEarned, userId]);
+      const updatedUser = await queryOne(`SELECT coins FROM users WHERE id = ?`, [userId]);
+      userCoins = updatedUser?.coins ?? 0;
 
       // Check QUIZ_CHAMP if score >= 90%
       if (scorePercent >= 90) {
@@ -291,6 +323,8 @@ router.post('/:id/submit', authenticateToken, async (req: AuthRequest, res: Resp
       total_points: totalPoints,
       earned_points: earnedPoints,
       xp_earned: xpEarned,
+      coins_earned: passed === 1 ? 10 : 0,
+      coins: userCoins,
       reviews: answerReviews
     });
   } catch (err) {

@@ -3,12 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const index_1 = require("../db/index");
 const auth_1 = require("../middleware/auth");
+const languageQuestions_1 = require("../utils/languageQuestions");
 const router = (0, express_1.Router)();
-// Get quiz questions (without revealing is_correct to avoid cheating)
+// Get quiz questions (includes is_correct for immediate step-by-step validation)
 router.get('/:id', auth_1.authenticateToken, async (req, res) => {
     try {
         const quizId = req.params.id;
-        const quiz = await (0, index_1.queryOne)(`SELECT q.*, c.title as course_title
+        const quiz = await (0, index_1.queryOne)(`SELECT q.*, c.title as course_title, c.language as course_language
        FROM quizzes q
        JOIN courses c ON q.course_id = c.id
        WHERE q.id = ?`, [quizId]);
@@ -16,12 +17,29 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
             res.status(404).json({ success: false, message: 'Test topilmadi.' });
             return;
         }
-        const questions = await (0, index_1.queryAll)(`SELECT id, quiz_id, question_type, question_text, audio_url, reading_passage, points, order_index
+        let questions = await (0, index_1.queryAll)(`SELECT id, quiz_id, question_type, question_text, audio_url, reading_passage, points, order_index
        FROM quiz_questions WHERE quiz_id = ? ORDER BY order_index ASC`, [quizId]);
+        // If quiz has no questions yet, auto-populate language-tailored beginner questions
+        if (questions.length === 0) {
+            const generated = (0, languageQuestions_1.getBeginnerQuestionsForLanguage)(quiz.course_language || 'English', 1, quiz.title);
+            for (let i = 0; i < generated.length; i++) {
+                const g = generated[i];
+                const qId = 'qq-' + Date.now() + '-' + i;
+                await (0, index_1.executeRun)(`INSERT INTO quiz_questions (id, quiz_id, question_type, question_text, points, explanation, order_index)
+           VALUES (?, ?, 'multiple_choice', ?, ?, ?, ?)`, [qId, quiz.id, g.question_text, g.points, g.explanation, i + 1]);
+                for (let j = 0; j < g.options.length; j++) {
+                    const opt = g.options[j];
+                    await (0, index_1.executeRun)(`INSERT INTO quiz_options (id, question_id, option_text, is_correct, order_index)
+             VALUES (?, ?, ?, ?, ?)`, ['qo-' + Date.now() + '-' + i + '-' + j, qId, opt.text, opt.is_correct ? 1 : 0, j + 1]);
+                }
+            }
+            questions = await (0, index_1.queryAll)(`SELECT id, quiz_id, question_type, question_text, audio_url, reading_passage, points, order_index
+         FROM quiz_questions WHERE quiz_id = ? ORDER BY order_index ASC`, [quizId]);
+        }
         const questionIds = questions.map((q) => `'${q.id}'`).join(',');
         let options = [];
         if (questionIds.length > 0) {
-            options = await (0, index_1.queryAll)(`SELECT id, question_id, option_text, match_pair, order_index
+            options = await (0, index_1.queryAll)(`SELECT id, question_id, option_text, is_correct, match_pair, order_index
          FROM quiz_options WHERE question_id IN (${questionIds}) ORDER BY order_index ASC`);
         }
         const questionsWithOptions = questions.map((q) => {
@@ -31,6 +49,7 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
                 options: qOpts.map((o) => ({
                     id: o.id,
                     text: o.option_text,
+                    is_correct: o.is_correct === 1,
                     match_pair: o.match_pair
                 }))
             };
@@ -123,9 +142,12 @@ router.post('/:id/submit', auth_1.authenticateToken, async (req, res) => {
          VALUES (?, ?, ?, ?, ?, ?)`, ['qa-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6), attemptId, r.question_id, JSON.stringify(r.user_answer), r.is_correct ? 1 : 0, r.earned_points]);
         }
         let xpEarned = 0;
+        let userCoins = 0;
         if (passed) {
             xpEarned = 50;
-            await (0, index_1.executeRun)(`UPDATE users SET xp_points = xp_points + ? WHERE id = ?`, [xpEarned, userId]);
+            await (0, index_1.executeRun)(`UPDATE users SET xp_points = xp_points + ?, coins = COALESCE(coins, 0) + 10 WHERE id = ?`, [xpEarned, userId]);
+            const updatedUser = await (0, index_1.queryOne)(`SELECT coins FROM users WHERE id = ?`, [userId]);
+            userCoins = updatedUser?.coins ?? 0;
             // Check QUIZ_CHAMP if score >= 90%
             if (scorePercent >= 90) {
                 const hasChamp = await (0, index_1.queryOne)(`SELECT id FROM user_achievements WHERE user_id = ? AND achievement_id = 'ach-3'`, [userId]);
@@ -214,6 +236,8 @@ router.post('/:id/submit', auth_1.authenticateToken, async (req, res) => {
             total_points: totalPoints,
             earned_points: earnedPoints,
             xp_earned: xpEarned,
+            coins_earned: passed === 1 ? 10 : 0,
+            coins: userCoins,
             reviews: answerReviews
         });
     }

@@ -15,7 +15,9 @@ import {
   Volume2,
   BookOpen,
   Check,
-  ChevronRight
+  ChevronRight,
+  Lock,
+  AlertCircle
 } from 'lucide-react';
 
 interface QuizEnginePageProps {
@@ -24,7 +26,7 @@ interface QuizEnginePageProps {
 }
 
 export const QuizEnginePage: React.FC<QuizEnginePageProps> = ({ quizId, navigate }) => {
-  const { user } = useAuth();
+  const { user, updateCoins } = useAuth();
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,7 @@ export const QuizEnginePage: React.FC<QuizEnginePageProps> = ({ quizId, navigate
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [result, setResult] = useState<any>(null);
   const [showReview, setShowReview] = useState<boolean>(false);
+  const [feedback, setFeedback] = useState<{ isCorrect: boolean; message: string } | null>(null);
 
   // Matching helper state
   const [selectedMatchOpt, setSelectedMatchOpt] = useState<string | null>(null);
@@ -78,22 +81,95 @@ export const QuizEnginePage: React.FC<QuizEnginePageProps> = ({ quizId, navigate
     return () => clearInterval(interval);
   }, [isSubmitted, quiz, userAnswers]);
 
+  // Clear feedback when question changes
+  useEffect(() => {
+    setFeedback(null);
+  }, [currentQuestionIndex]);
+
+  const isCurrentQuestionCorrect = (): boolean => {
+    if (!quiz || !quiz.questions || !quiz.questions[currentQuestionIndex]) return false;
+    const q = quiz.questions[currentQuestionIndex];
+    const ans = userAnswers[q.id];
+    if (ans === undefined || ans === null || ans === '') return false;
+
+    if (q.question_type === 'multiple_choice' || q.question_type === 'true_false' || q.question_type === 'translation' || q.question_type === 'listening' || q.question_type === 'reading') {
+      const correctOpt = q.options?.find((o) => o.is_correct === true || (o as any).is_correct === 1);
+      if (correctOpt) {
+        return ans === correctOpt.id || ans === correctOpt.text;
+      }
+      return true;
+    } else if (q.question_type === 'fill_blank' || q.question_type === 'sentence_order') {
+      const correctOpt = q.options?.find((o) => o.is_correct === true || (o as any).is_correct === 1);
+      if (correctOpt) {
+        return String(ans).trim().toLowerCase() === String(correctOpt.text).trim().toLowerCase();
+      }
+      return String(ans).trim().length > 0;
+    } else if (q.question_type === 'word_matching') {
+      if (!ans || typeof ans !== 'object') return false;
+      if (!q.options || q.options.length === 0) return true;
+      return q.options.every((opt) => {
+        const selectedVal = ans[opt.id];
+        const correctVal = opt.match_pair || opt.text;
+        return selectedVal && selectedVal === correctVal;
+      });
+    }
+    return true;
+  };
+
   const handleSelectAnswer = (questionId: string, answer: any) => {
     setUserAnswers((prev) => ({
       ...prev,
       [questionId]: answer
     }));
+
+    const q = quiz?.questions.find((item) => item.id === questionId);
+    if (q) {
+      const correctOpt = q.options?.find((o) => o.is_correct === true || (o as any).is_correct === 1);
+      if (correctOpt) {
+        const isRight = answer === correctOpt.id || answer === correctOpt.text;
+        if (isRight) {
+          setFeedback({
+            isCorrect: true,
+            message: "Barakalla! To'g'ri javob. Endi keyingi savolga o'tishingiz mumkin."
+          });
+        } else {
+          setFeedback({
+            isCorrect: false,
+            message: "Noto'g'ri javob! Qaytadan urinib ko'ring. Keyingi savolga o'tish uchun to'g'ri javobni tanlashingiz kerak."
+          });
+        }
+      }
+    }
   };
 
   const handleMatchPair = (questionId: string, optId: string, targetPair: string) => {
-    const currentMatches = userAnswers[questionId] || {};
+    const currentMatches = {
+      ...(userAnswers[questionId] || {}),
+      [optId]: targetPair
+    };
     setUserAnswers((prev) => ({
       ...prev,
-      [questionId]: {
-        ...currentMatches,
-        [optId]: targetPair
-      }
+      [questionId]: currentMatches
     }));
+
+    const q = quiz?.questions.find((item) => item.id === questionId);
+    if (q && q.options) {
+      const allFilled = q.options.every((opt) => !!currentMatches[opt.id]);
+      if (allFilled) {
+        const allCorrect = q.options.every((opt) => currentMatches[opt.id] === (opt.match_pair || opt.text));
+        if (allCorrect) {
+          setFeedback({
+            isCorrect: true,
+            message: "Barakalla! Barcha so'zlar to'g'ri moslashtirildi. Endi keyingi savolga o'tishingiz mumkin."
+          });
+        } else {
+          setFeedback({
+            isCorrect: false,
+            message: "Ba'zi so'zlar noto'g'ri moslashtirilgan. Tekshirib qaytadan urinib ko'ring."
+          });
+        }
+      }
+    }
   };
 
   const handleSubmitQuiz = async () => {
@@ -120,8 +196,11 @@ export const QuizEnginePage: React.FC<QuizEnginePageProps> = ({ quizId, navigate
         setResult(data);
         setIsSubmitted(true);
         if (data.passed) {
+          if (typeof data.coins === 'number') {
+            updateCoins(data.coins);
+          }
           confetti({
-            particleCount: 100,
+            particleCount: 110,
             spread: 80,
             origin: { y: 0.55 }
           });
@@ -140,6 +219,7 @@ export const QuizEnginePage: React.FC<QuizEnginePageProps> = ({ quizId, navigate
     setIsSubmitted(false);
     setResult(null);
     setShowReview(false);
+    setFeedback(null);
     setTimeLeftSeconds((quiz?.time_limit_minutes || 10) * 60);
   };
 
@@ -205,26 +285,55 @@ export const QuizEnginePage: React.FC<QuizEnginePageProps> = ({ quizId, navigate
             <div className="space-y-2.5">
               {q.options.map((opt) => {
                 const isSelected = currentAns === opt.id || currentAns === opt.text;
+                const isCorrectOpt = opt.is_correct === true || (opt as any).is_correct === 1;
+
+                let optStyle = 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:border-gray-300';
+                if (isSelected) {
+                  if (isCorrectOpt) {
+                    optStyle = 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-800 dark:text-emerald-200 shadow-sm font-bold';
+                  } else {
+                    optStyle = 'bg-red-50 dark:bg-red-950/60 border-red-500 text-red-800 dark:text-red-200 shadow-sm font-semibold';
+                  }
+                }
+
                 return (
                   <button
                     key={opt.id}
+                    type="button"
                     onClick={() => handleSelectAnswer(q.id, opt.id)}
-                    className={`w-full p-4 rounded-2xl border text-xs sm:text-sm font-semibold transition text-left flex items-center justify-between ${
-                      isSelected
-                        ? 'bg-primary-50 dark:bg-primary-950/50 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm'
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:border-gray-300'
-                    }`}
+                    className={`w-full p-4 rounded-2xl border text-xs sm:text-sm font-semibold transition text-left flex items-center justify-between cursor-pointer ${optStyle}`}
                   >
                     <span>{opt.text}</span>
-                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                      isSelected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-300'
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                      isSelected
+                        ? isCorrectOpt
+                          ? 'border-emerald-600 bg-emerald-600 text-white'
+                          : 'border-red-600 bg-red-600 text-white'
+                        : 'border-gray-300'
                     }`}>
-                      {isSelected && <Check className="w-3.5 h-3.5" />}
+                      {isSelected && (
+                        isCorrectOpt ? <Check className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />
+                      )}
                     </div>
                   </button>
                 );
               })}
             </div>
+
+            {feedback && (
+              <div className={`p-4 rounded-2xl border flex items-center gap-3 text-xs font-bold transition-all ${
+                feedback.isCorrect
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800 shadow-sm'
+                  : 'bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800 animate-pulse'
+              }`}>
+                {feedback.isCorrect ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                )}
+                <span>{feedback.message}</span>
+              </div>
+            )}
           </div>
         );
 
@@ -284,6 +393,21 @@ export const QuizEnginePage: React.FC<QuizEnginePageProps> = ({ quizId, navigate
                 </div>
               ))}
             </div>
+
+            {feedback && (
+              <div className={`p-4 rounded-2xl border flex items-center gap-3 text-xs font-bold transition-all ${
+                feedback.isCorrect
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800 shadow-sm'
+                  : 'bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800 animate-pulse'
+              }`}>
+                {feedback.isCorrect ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                )}
+                <span>{feedback.message}</span>
+              </div>
+            )}
           </div>
         );
 
@@ -347,35 +471,75 @@ export const QuizEnginePage: React.FC<QuizEnginePageProps> = ({ quizId, navigate
             {currentQ && renderQuestionInput(currentQ)}
 
             {/* Navigation Bottom Controls */}
-            <div className="pt-6 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-              <button
-                disabled={currentQuestionIndex === 0}
-                onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-200 transition flex items-center gap-1.5"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Oldingi</span>
-              </button>
+            {(() => {
+              const isCurrentCorrect = isCurrentQuestionCorrect();
+              return (
+                <div className="pt-6 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    disabled={currentQuestionIndex === 0}
+                    onClick={() => {
+                      setFeedback(null);
+                      setCurrentQuestionIndex((prev) => prev - 1);
+                    }}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-200 dark:hover:bg-gray-700 transition flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Oldingi</span>
+                  </button>
 
-              {currentQuestionIndex < totalQuestions - 1 ? (
-                <button
-                  onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-primary-600 hover:bg-primary-500 text-white shadow-md transition flex items-center gap-1.5"
-                >
-                  <span>Keyingi savol</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmitQuiz}
-                  disabled={submitting}
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-500/25 transition flex items-center gap-1.5"
-                >
-                  <Award className="w-4 h-4" />
-                  <span>{submitting ? 'Tekshirilmoqda...' : 'Testni Yakunlash'}</span>
-                </button>
-              )}
-            </div>
+                  <div className="flex items-center gap-2">
+                    {!isCurrentCorrect && (
+                      <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800/60">
+                        <Lock className="w-3 h-3" />
+                        To'g'ri javobni tanlang
+                      </span>
+                    )}
+
+                    {currentQuestionIndex < totalQuestions - 1 ? (
+                      <button
+                        type="button"
+                        disabled={!isCurrentCorrect}
+                        onClick={() => {
+                          if (!isCurrentCorrect) {
+                            setFeedback({
+                              isCorrect: false,
+                              message: "Keyingi savolga o'tish uchun to'g'ri javobni topishingiz shart!"
+                            });
+                            return;
+                          }
+                          setFeedback(null);
+                          setCurrentQuestionIndex((prev) => prev + 1);
+                        }}
+                        className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                          isCurrentCorrect
+                            ? 'bg-primary-600 hover:bg-primary-500 text-white shadow-md shadow-primary-500/25 cursor-pointer active:scale-95'
+                            : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60'
+                        }`}
+                      >
+                        {!isCurrentCorrect && <Lock className="w-3.5 h-3.5 text-amber-500" />}
+                        <span>Keyingi savol</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleSubmitQuiz}
+                        disabled={submitting || !isCurrentCorrect}
+                        className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                          isCurrentCorrect
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-500/25 cursor-pointer active:scale-95'
+                            : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60'
+                        }`}
+                      >
+                        <Award className="w-4 h-4" />
+                        <span>{submitting ? 'Tekshirilmoqda...' : 'Testni Yakunlash (+10 🪙 Coin)'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         ) : (
           /* Results Card */

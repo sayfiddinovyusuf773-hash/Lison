@@ -161,6 +161,7 @@ export interface Lesson {
 export interface QuizOption {
   id: string;
   text: string;
+  is_correct?: boolean;
   match_pair?: string;
 }
 
