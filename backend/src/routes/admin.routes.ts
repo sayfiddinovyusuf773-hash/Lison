@@ -112,6 +112,11 @@ router.put('/users/:id', async (req: AuthRequest, res: Response): Promise<void> 
       [role, is_suspended, is_active, first_name, last_name, targetUserId]
     );
 
+    if (req.body.password && req.body.password.trim().length >= 4) {
+      const hash = await bcrypt.hash(req.body.password.trim(), 10);
+      await executeRun(`UPDATE users SET password_hash = ? WHERE id = ?`, [hash, targetUserId]);
+    }
+
     await logAudit(
       req.user!.id,
       'UPDATE_USER',

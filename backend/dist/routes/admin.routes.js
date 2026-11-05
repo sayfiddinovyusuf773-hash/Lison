@@ -98,6 +98,10 @@ router.put('/users/:id', async (req, res) => {
            last_name = COALESCE(?, last_name),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`, [role, is_suspended, is_active, first_name, last_name, targetUserId]);
+        if (req.body.password && req.body.password.trim().length >= 4) {
+            const hash = await bcryptjs_1.default.hash(req.body.password.trim(), 10);
+            await (0, index_1.executeRun)(`UPDATE users SET password_hash = ? WHERE id = ?`, [hash, targetUserId]);
+        }
         await (0, auth_1.logAudit)(req.user.id, 'UPDATE_USER', 'USERS', `Modified user ${targetUserId}: role=${role}, suspended=${is_suspended}`, req.ip);
         res.json({ success: true, message: 'Foydalanuvchi ma\'lumotlari muvaffaqiyatli yangilandi.' });
     }
