@@ -289,7 +289,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                 className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/80 rounded-xl text-amber-700 dark:text-amber-300 font-black text-xs shadow-sm transition hover:scale-105 cursor-help"
               >
                 <span className="text-sm animate-pulse">🪙</span>
-                <span>{user.coins !== undefined && user.coins !== null ? user.coins : 50}</span>
+                <span>{user.coins !== undefined && user.coins !== null ? user.coins : 0}</span>
                 <span className="hidden sm:inline text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Coin</span>
               </div>
             )}
@@ -320,7 +320,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                       </p>
                       <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
                       <div className="mt-1 flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
-                        <span>🪙 {user.coins !== undefined && user.coins !== null ? user.coins : 50} tanga</span>
+                        <span>🪙 {user.coins !== undefined && user.coins !== null ? user.coins : 0} tanga</span>
                       </div>
                     </div>
 
@@ -410,7 +410,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800/60 my-1">
               <span className="text-xs font-bold text-amber-900 dark:text-amber-200">Hisobingizdagi tangalar:</span>
               <span className="text-sm font-extrabold text-amber-600 dark:text-amber-300 flex items-center gap-1">
-                🪙 {user.coins !== undefined && user.coins !== null ? user.coins : 50} Coin
+                🪙 {user.coins !== undefined && user.coins !== null ? user.coins : 0} Coin
               </span>
             </div>
           )}

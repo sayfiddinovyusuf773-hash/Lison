@@ -30,7 +30,7 @@ router.post('/register', async (req, res) => {
         const passwordHash = await bcryptjs_1.default.hash(password, 10);
         const userId = 'usr-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
         await (0, index_1.executeRun)(`INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level, coins)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 50, 1, 50)`, [userId, normalizedEmail, passwordHash, first_name.trim(), last_name.trim(), preferred_language || 'uz', learning_level || 'A1']);
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 50, 1, 0)`, [userId, normalizedEmail, passwordHash, first_name.trim(), last_name.trim(), preferred_language || 'uz', learning_level || 'A1']);
         // Initial streak
         await (0, index_1.executeRun)(`INSERT INTO learning_streaks (user_id, current_streak, longest_streak) VALUES (?, 1, 1)`, [userId]);
         // Initial notification
@@ -52,7 +52,7 @@ router.post('/register', async (req, res) => {
                 learning_level: learning_level || 'A1',
                 xp_points: 50,
                 level: 1,
-                coins: 50,
+                coins: 0,
                 avatar: null
             }
         });
@@ -120,7 +120,7 @@ router.post('/login', async (req, res) => {
                 learning_level: user.learning_level,
                 xp_points: user.xp_points,
                 level: user.level,
-                coins: user.coins !== undefined && user.coins !== null ? user.coins : 50,
+                coins: user.coins !== undefined && user.coins !== null ? user.coins : 0,
                 daily_goal_minutes: user.daily_goal_minutes
             }
         });
@@ -140,7 +140,7 @@ router.get('/me', auth_1.authenticateToken, async (req, res) => {
             success: true,
             user: {
                 ...user,
-                coins: user?.coins !== undefined && user?.coins !== null ? user.coins : 50,
+                coins: user?.coins !== undefined && user?.coins !== null ? user.coins : 0,
                 streak: streak ? streak.current_streak : 1,
                 longest_streak: streak ? streak.longest_streak : 1
             }

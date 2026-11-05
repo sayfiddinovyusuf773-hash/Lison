@@ -33,7 +33,7 @@ router.post('/register', async (req: AuthRequest, res: Response): Promise<void> 
 
     await executeRun(
       `INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level, coins)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 50, 1, 50)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 50, 1, 0)`,
       [userId, normalizedEmail, passwordHash, first_name.trim(), last_name.trim(), preferred_language || 'uz', learning_level || 'A1']
     );
 
@@ -68,7 +68,7 @@ router.post('/register', async (req: AuthRequest, res: Response): Promise<void> 
         learning_level: learning_level || 'A1',
         xp_points: 50,
         level: 1,
-        coins: 50,
+        coins: 0,
         avatar: null
       }
     });
@@ -150,7 +150,7 @@ router.post('/login', async (req: AuthRequest, res: Response): Promise<void> => 
         learning_level: user.learning_level,
         xp_points: user.xp_points,
         level: user.level,
-        coins: user.coins !== undefined && user.coins !== null ? user.coins : 50,
+        coins: user.coins !== undefined && user.coins !== null ? user.coins : 0,
         daily_goal_minutes: user.daily_goal_minutes
       }
     });
@@ -175,7 +175,7 @@ router.get('/me', authenticateToken, async (req: AuthRequest, res: Response): Pr
       success: true,
       user: {
         ...user,
-        coins: user?.coins !== undefined && user?.coins !== null ? user.coins : 50,
+        coins: user?.coins !== undefined && user?.coins !== null ? user.coins : 0,
         streak: streak ? streak.current_streak : 1,
         longest_streak: streak ? streak.longest_streak : 1
       }

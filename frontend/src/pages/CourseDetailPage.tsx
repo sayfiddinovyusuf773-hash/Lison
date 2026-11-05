@@ -202,7 +202,7 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ courseId, na
       return;
     }
     const requiredCoins = course?.price_coins || 100;
-    const currentCoins = user.coins !== undefined && user.coins !== null ? user.coins : 50;
+    const currentCoins = user.coins !== undefined && user.coins !== null ? user.coins : 0;
 
     if (currentCoins < requiredCoins) {
       alert(`Sizda tangalar yetarli emas.\nSizdagi tangalar: ${currentCoins} 🪙\nKursni ochish uchun: ${requiredCoins} 🪙 kerak.\n\nDarslarni o'qib, savollarga to'g'ri javob berib tangalar to'plang!`);

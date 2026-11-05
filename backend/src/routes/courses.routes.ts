@@ -269,7 +269,7 @@ router.post('/:id/unlock-with-coins', authenticateToken, async (req: AuthRequest
     }
 
     const user = await queryOne(`SELECT coins FROM users WHERE id = ?`, [userId]);
-    const currentCoins = user?.coins !== undefined && user?.coins !== null ? user.coins : 50;
+    const currentCoins = user?.coins !== undefined && user?.coins !== null ? user.coins : 0;
     const requiredCoins = course.price_coins || 100;
 
     if (currentCoins < requiredCoins) {

@@ -75,7 +75,7 @@ const initDatabase = async () => {
       learning_level TEXT DEFAULT 'A1',
       daily_goal_minutes INTEGER DEFAULT 20,
       xp_points INTEGER DEFAULT 0,
-      coins INTEGER DEFAULT 50,
+      coins INTEGER DEFAULT 0,
       level INTEGER DEFAULT 1,
       is_active INTEGER DEFAULT 1,
       is_suspended INTEGER DEFAULT 0,
@@ -444,8 +444,8 @@ const initDatabase = async () => {
                     await (0, exports.executeRun)(`ALTER TABLE courses ADD COLUMN price INTEGER DEFAULT 0;`).catch(() => { });
                     await (0, exports.executeRun)(`ALTER TABLE courses ADD COLUMN currency TEXT DEFAULT 'UZS';`).catch(() => { });
                     await (0, exports.executeRun)(`ALTER TABLE courses ADD COLUMN price_coins INTEGER DEFAULT 100;`).catch(() => { });
-                    await (0, exports.executeRun)(`ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 50;`).catch(() => { });
-                    await (0, exports.executeRun)(`UPDATE users SET coins = 50 WHERE coins IS NULL;`).catch(() => { });
+                    await (0, exports.executeRun)(`ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 0;`).catch(() => { });
+                    await (0, exports.executeRun)(`UPDATE users SET coins = 0 WHERE coins IS NULL;`).catch(() => { });
                     await (0, exports.executeRun)(`UPDATE courses SET price_coins = 100 WHERE price_coins IS NULL;`).catch(() => { });
                 }
                 catch { }

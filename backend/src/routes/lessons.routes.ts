@@ -418,7 +418,7 @@ router.post('/:id/complete', authenticateToken, async (req: AuthRequest, res: Re
         message: 'Dars muvaffaqiyatli tamomlandi! +10 🪙 Coin va +30 XP qo\'shildi.',
         xp_earned: 30,
         coins_earned: 10,
-        coins: updatedUser?.coins ?? 50,
+        coins: updatedUser?.coins ?? 0,
         progress_percent: percent,
         is_course_completed: isCourseCompleted === 1
       });
@@ -429,7 +429,7 @@ router.post('/:id/complete', authenticateToken, async (req: AuthRequest, res: Re
     res.json({
       success: true,
       message: 'Dars avval tamomlangan.',
-      coins: curr?.coins ?? 50
+      coins: curr?.coins ?? 0
     });
   } catch (err) {
     console.error('Complete lesson error:', err);
