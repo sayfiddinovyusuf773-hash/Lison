@@ -143,6 +143,15 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
                   Terms of Service
                 </a>
               </li>
+              <li className="pt-1">
+                <button
+                  onClick={() => openAuthModal('admin')}
+                  className="hover:text-purple-600 dark:hover:text-purple-400 transition flex items-center gap-1.5 font-bold text-purple-600 dark:text-purple-400 cursor-pointer"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Admin Kirish</span>
+                </button>
+              </li>
             </ul>
           </div>
         </div>
