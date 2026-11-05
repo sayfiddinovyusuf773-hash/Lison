@@ -73,7 +73,15 @@ export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, na
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
+        if (data.redirect_lesson_id && data.redirect_lesson_id !== lessonId) {
+          navigate(`/lessons/${data.redirect_lesson_id}`);
+          return;
+        }
         if (data.success && data.lesson) {
+          if (data.lesson.id !== lessonId) {
+            navigate(`/lessons/${data.lesson.id}`);
+            return;
+          }
           setLesson(data.lesson);
           setIsBookmarked(data.lesson.progress?.is_bookmarked === 1);
           setNotes(data.lesson.progress?.student_notes || '');
@@ -285,9 +293,18 @@ export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, na
 
   if (!lesson) {
     return (
-      <div className="max-w-md mx-auto text-center py-20">
-        <h2 className="text-xl font-bold">Dars topilmadi</h2>
-        <button onClick={() => navigate('/courses')} className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-bold">
+      <div className="max-w-md mx-auto text-center py-20 px-4">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+          <BookOpen className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Dars yuklanmoqda yoki boshqasiga yo'naltirilmoqda</h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+          Ushbu dars ma'lumotlari yangilangan bo'lishi mumkin. Kurslar ro'yxatidan darsni davom ettirishingiz mumkin.
+        </p>
+        <button
+          onClick={() => navigate('/courses')}
+          className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold shadow-lg transition cursor-pointer"
+        >
           Kurslarga qaytish
         </button>
       </div>

@@ -64,16 +64,41 @@ async function seedAICourse() {
         }
     ];
     for (const m of modules) {
-        await (0, index_1.executeRun)(`INSERT OR REPLACE INTO course_modules (id, course_id, title, order_index) VALUES (?, ?, ?, ?)`, [m.id, m.course_id, m.title, m.order_index]);
+        await (0, index_1.executeRun)(`INSERT OR IGNORE INTO course_modules (id, course_id, title, order_index) VALUES (?, ?, ?, ?)`, [m.id, m.course_id, m.title, m.order_index]);
     }
     // 4. Lessons
     const lessons = [
+        {
+            id: 'lsn-1793882379935',
+            module_id: 'mod-ai-1',
+            course_id: 'crs-it-ai',
+            title: '1-kun Codestart',
+            order_index: 1,
+            video_url: 'https://www.youtube.com/embed/QqBkN5TJEss',
+            audio_url: '',
+            duration_minutes: 20,
+            content_text: "Sun'iy intellekt va dasturlashga amaliy kirish. Codestart loyihasi bo'yicha boshlang'ich tushunchalar va dars ko'rsatmalari.",
+            vocabulary_json: JSON.stringify([
+                { word: 'Artificial Intelligence (AI)', translation: "Sun'iy Intellekt", pronunciation: '/ˌɑː.tɪ.fɪʃ.əl ɪnˈtel.ɪ.dʒəns/', example: 'AI is changing the modern world.' },
+                { word: 'Machine Learning (ML)', translation: "Mashinali O'rganish", pronunciation: '/məˈʃiːn ˈlɜː.nɪŋ/', example: 'Machine learning algorithms learn from data.' },
+                { word: 'Deep Learning', translation: "Chuqur O'rganish (Neyrotarmoqlar)", pronunciation: '/diːp ˈlɜː.nɪŋ/', example: 'Deep learning mimics the human brain.' }
+            ]),
+            grammar_json: JSON.stringify([
+                {
+                    rule: 'AI Tizimlarining 3 Asosiy Bosqichi',
+                    explanation: "1. Data (Ma'lumotlar) -> 2. Model Training (Modelni o'qitish) -> 3. Inference (Bashorat va xulosa chiqarish)",
+                    examples: ["ChatGPT katta hajmdagi matnlar ustida o'qitilgan.", "Rasm berilganda unda nima tasvirlanganini aniqlash."]
+                }
+            ]),
+            transcript: "Ushbu darsda siz sun'iy intellekt qanday paydo bo'lgani, zamonaviy axborot texnologiyalaridagi o'rni va kelajakdagi imkoniyatlari haqida batafsil bilib olasiz.",
+            materials_url: '/materials/ai-intro-lesson1.pdf'
+        },
         {
             id: 'lsn-ai-1',
             module_id: 'mod-ai-1',
             course_id: 'crs-it-ai',
             title: "1-Dars: Sun'iy Intellekt Nima? AI, ML va Deep Learning Farqlari",
-            order_index: 1,
+            order_index: 2,
             video_url: 'https://www.youtube.com/embed/2ePf9rue1Ao',
             audio_url: '',
             duration_minutes: 25,
@@ -169,7 +194,7 @@ async function seedAICourse() {
         }
     ];
     for (const l of lessons) {
-        await (0, index_1.executeRun)(`INSERT OR REPLACE INTO lessons (id, module_id, course_id, title, order_index, video_url, audio_url, duration_minutes, content_text, vocabulary_json, grammar_json, transcript, materials_url)
+        await (0, index_1.executeRun)(`INSERT OR IGNORE INTO lessons (id, module_id, course_id, title, order_index, video_url, audio_url, duration_minutes, content_text, vocabulary_json, grammar_json, transcript, materials_url)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [l.id, l.module_id, l.course_id, l.title, l.order_index, l.video_url, l.audio_url, l.duration_minutes, l.content_text, l.vocabulary_json, l.grammar_json, l.transcript, l.materials_url]);
     }
     // 5. Quiz for Lesson 1
@@ -182,7 +207,7 @@ async function seedAICourse() {
         passing_score: 75,
         time_limit_minutes: 10
     };
-    await (0, index_1.executeRun)(`INSERT OR REPLACE INTO quizzes (id, lesson_id, course_id, title, description, passing_score, time_limit_minutes)
+    await (0, index_1.executeRun)(`INSERT OR IGNORE INTO quizzes (id, lesson_id, course_id, title, description, passing_score, time_limit_minutes)
      VALUES (?, ?, ?, ?, ?, ?, ?)`, [quiz.id, quiz.lesson_id, quiz.course_id, quiz.title, quiz.description, quiz.passing_score, quiz.time_limit_minutes]);
     const questions = [
         {
@@ -247,11 +272,11 @@ async function seedAICourse() {
         }
     ];
     for (const q of questions) {
-        await (0, index_1.executeRun)(`INSERT OR REPLACE INTO quiz_questions (id, quiz_id, question_type, question_text, points, explanation, order_index)
+        await (0, index_1.executeRun)(`INSERT OR IGNORE INTO quiz_questions (id, quiz_id, question_type, question_text, points, explanation, order_index)
        VALUES (?, ?, ?, ?, ?, ?, ?)`, [q.id, q.quiz_id, q.question_type, q.question_text, q.points, q.explanation, q.order_index]);
         for (let j = 0; j < q.options.length; j++) {
             const opt = q.options[j];
-            await (0, index_1.executeRun)(`INSERT OR REPLACE INTO quiz_options (id, question_id, option_text, is_correct, order_index)
+            await (0, index_1.executeRun)(`INSERT OR IGNORE INTO quiz_options (id, question_id, option_text, is_correct, order_index)
          VALUES (?, ?, ?, ?, ?)`, [opt.id, q.id, opt.text, opt.is_correct, j + 1]);
         }
     }

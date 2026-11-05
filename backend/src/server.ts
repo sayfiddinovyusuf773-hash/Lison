@@ -153,13 +153,10 @@ initDatabase()
       console.warn('Admin password initialization notice:', err.message);
     }
 
-    // Ensure IT & Sun'iy Intellekt Course is always present
+    // Ensure IT & Sun'iy Intellekt Course and core modules/lessons are always present
     try {
-      const aiCourse = await queryOne(`SELECT id FROM courses WHERE id = 'crs-it-ai'`);
-      if (!aiCourse) {
-        await seedAICourse();
-        console.log("🤖 IT & Sun'iy Intellekt (AI) course verified and active!");
-      }
+      await seedAICourse();
+      console.log("🤖 IT & Sun'iy Intellekt (AI) course verified and active!");
     } catch (err: any) {
       console.warn('AI course check notice:', err.message);
     }

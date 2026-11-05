@@ -135,13 +135,10 @@ app.listen(Number(PORT), HOST, () => {
     catch (err) {
         console.warn('Admin password initialization notice:', err.message);
     }
-    // Ensure IT & Sun'iy Intellekt Course is always present
+    // Ensure IT & Sun'iy Intellekt Course and core modules/lessons are always present
     try {
-        const aiCourse = await (0, index_1.queryOne)(`SELECT id FROM courses WHERE id = 'crs-it-ai'`);
-        if (!aiCourse) {
-            await (0, seed_ai_1.seedAICourse)();
-            console.log("🤖 IT & Sun'iy Intellekt (AI) course verified and active!");
-        }
+        await (0, seed_ai_1.seedAICourse)();
+        console.log("🤖 IT & Sun'iy Intellekt (AI) course verified and active!");
     }
     catch (err) {
         console.warn('AI course check notice:', err.message);

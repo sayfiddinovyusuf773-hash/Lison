@@ -118,7 +118,16 @@ router.get('/:id', auth_1.optionalAuth, async (req, res) => {
         course.curriculum = curriculum;
         course.is_enrolled = !!enrollment;
         course.progress_percent = enrollment ? enrollment.progress_percent : 0;
-        course.last_accessed_lesson_id = enrollment ? enrollment.last_accessed_lesson_id : null;
+        // Ensure last_accessed_lesson_id points to a valid existing lesson
+        const validLessonIds = lessons.map((l) => l.id);
+        let resolvedLastAccessed = enrollment ? enrollment.last_accessed_lesson_id : null;
+        if (resolvedLastAccessed && !validLessonIds.includes(resolvedLastAccessed)) {
+            resolvedLastAccessed = validLessonIds.length > 0 ? validLessonIds[0] : null;
+            if (enrollment && resolvedLastAccessed) {
+                (0, index_1.executeRun)(`UPDATE enrollments SET last_accessed_lesson_id = ? WHERE id = ?`, [resolvedLastAccessed, enrollment.id]).catch(() => { });
+            }
+        }
+        course.last_accessed_lesson_id = resolvedLastAccessed;
         course.is_wishlist = enrollment ? !!enrollment.is_wishlist : false;
         course.pending_request = pendingRequest || null;
         res.json({ success: true, course });

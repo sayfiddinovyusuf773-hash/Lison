@@ -8,15 +8,44 @@ const router = (0, express_1.Router)();
 // Get single lesson details with navigation and user progress
 router.get('/:id', auth_1.authenticateToken, async (req, res) => {
     try {
-        const lessonId = req.params.id;
+        const lessonId = String(req.params.id);
         const userId = req.user.id;
-        const lesson = await (0, index_1.queryOne)(`SELECT l.*, c.title as course_title, c.slug as course_slug, c.language as course_language
+        let lesson = await (0, index_1.queryOne)(`SELECT l.*, c.title as course_title, c.slug as course_slug, c.language as course_language
        FROM lessons l
        JOIN courses c ON l.course_id = c.id
        WHERE l.id = ?`, [lessonId]);
+        let wasRedirected = false;
         if (!lesson) {
-            res.status(404).json({ success: false, message: 'Dars topilmadi.' });
-            return;
+            console.warn(`Lesson "${lessonId}" not found directly. Attempting smart fallback...`);
+            // 1. If it starts with lsn-ai, resolve to the first available lesson in AI course
+            if (lessonId.startsWith('lsn-ai') || lessonId.toLowerCase().includes('ai')) {
+                lesson = await (0, index_1.queryOne)(`SELECT l.*, c.title as course_title, c.slug as course_slug, c.language as course_language
+           FROM lessons l
+           JOIN courses c ON l.course_id = c.id
+           WHERE l.course_id = 'crs-it-ai'
+           ORDER BY l.order_index ASC LIMIT 1`);
+            }
+            // 2. Check if user is enrolled in a course that has lessons
+            if (!lesson && userId) {
+                lesson = await (0, index_1.queryOne)(`SELECT l.*, c.title as course_title, c.slug as course_slug, c.language as course_language
+           FROM enrollments e
+           JOIN lessons l ON l.course_id = e.course_id
+           JOIN courses c ON l.course_id = c.id
+           WHERE e.user_id = ?
+           ORDER BY e.updated_at DESC, l.order_index ASC LIMIT 1`, [userId]);
+            }
+            // 3. Fallback to any active lesson in the system
+            if (!lesson) {
+                lesson = await (0, index_1.queryOne)(`SELECT l.*, c.title as course_title, c.slug as course_slug, c.language as course_language
+           FROM lessons l
+           JOIN courses c ON l.course_id = c.id
+           ORDER BY l.order_index ASC LIMIT 1`);
+            }
+            if (!lesson) {
+                res.status(404).json({ success: false, message: 'Dars topilmadi.' });
+                return;
+            }
+            wasRedirected = true;
         }
         try {
             lesson.vocabulary = JSON.parse(lesson.vocabulary_json || '[]');
@@ -94,6 +123,7 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
         await (0, index_1.executeRun)(`UPDATE enrollments SET last_accessed_lesson_id = ? WHERE user_id = ? AND course_id = ?`, [lesson.id, userId, lesson.course_id]);
         res.json({
             success: true,
+            redirect_lesson_id: wasRedirected ? lesson.id : undefined,
             lesson: {
                 ...lesson,
                 prev_lesson: prevLesson,
@@ -111,7 +141,7 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
 // Update progress (playback time, bookmark, notes)
 router.post('/:id/progress', auth_1.authenticateToken, async (req, res) => {
     try {
-        const lessonId = req.params.id;
+        const lessonId = String(req.params.id);
         const userId = req.user.id;
         const { playback_time_seconds, is_bookmarked, student_notes } = req.body;
         const lesson = await (0, index_1.queryOne)(`SELECT course_id FROM lessons WHERE id = ?`, [lessonId]);
@@ -143,7 +173,7 @@ router.post('/:id/progress', auth_1.authenticateToken, async (req, res) => {
 // Submit homework / practical task for lesson and notify teacher
 router.post('/:id/submit-homework', auth_1.authenticateToken, async (req, res) => {
     try {
-        const lessonId = req.params.id;
+        const lessonId = String(req.params.id);
         const userId = req.user.id;
         const { homework_text, time_spent_seconds } = req.body;
         if (!homework_text || !homework_text.trim()) {
@@ -226,7 +256,7 @@ router.post('/:id/submit-homework', auth_1.authenticateToken, async (req, res) =
 // Mark lesson as completed (protected - requires passing quiz if quiz exists)
 router.post('/:id/complete', auth_1.authenticateToken, async (req, res) => {
     try {
-        const lessonId = req.params.id;
+        const lessonId = String(req.params.id);
         const userId = req.user.id;
         const lesson = await (0, index_1.queryOne)(`SELECT course_id, title FROM lessons WHERE id = ?`, [lessonId]);
         if (!lesson) {

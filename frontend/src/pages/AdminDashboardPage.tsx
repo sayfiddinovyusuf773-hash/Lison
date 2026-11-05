@@ -1370,6 +1370,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                               </p>
                               <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-400 mt-1">
                                 <span>{lesson.duration_minutes || 15} daqiqa</span>
+                                <a
+                                  href={`/lessons/${lesson.id}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 font-bold"
+                                >
+                                  <Play className="w-2.5 h-2.5" />
+                                  Darsni ko'rish
+                                </a>
                                 {lesson.video_url && (
                                   <a
                                     href={lesson.video_url}
@@ -1378,7 +1387,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                                     className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
                                   >
                                     <ExternalLink className="w-2.5 h-2.5" />
-                                    YouTube havola
+                                    YouTube
                                   </a>
                                 )}
                               </div>
