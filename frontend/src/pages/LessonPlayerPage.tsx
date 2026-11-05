@@ -24,7 +24,8 @@ import {
   Send,
   X,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Lock
 } from 'lucide-react';
 import { formatYouTubeEmbedUrl, getYouTubeWatchUrl } from '../utils/youtube';
 
@@ -34,7 +35,7 @@ interface LessonPlayerPageProps {
 }
 
 export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, navigate }) => {
-  const { user } = useAuth();
+  const { user, updateCoins } = useAuth();
   const { t } = useLanguage();
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -54,6 +55,14 @@ export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, na
   const [homeworkSubmitting, setHomeworkSubmitting] = useState<boolean>(false);
   const [homeworkError, setHomeworkError] = useState<string | null>(null);
   const [homeworkSuccess, setHomeworkSuccess] = useState<string | null>(null);
+
+  // Interactive In-Lesson Quiz State
+  const [selectedAnswers, setSelectedAnswers] = useState<{ [qId: string]: any }>({});
+  const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
+  const [quizPassed, setQuizPassed] = useState<boolean>(false);
+  const [quizError, setQuizError] = useState<string | null>(null);
+  const [quizNotice, setQuizNotice] = useState<string | null>(null);
+  const [quizChecking, setQuizChecking] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchLesson = async () => {
@@ -166,6 +175,9 @@ export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, na
       const data = await res.json();
       if (data.success) {
         setIsCompleted(true);
+        if (typeof data.coins === 'number') {
+          updateCoins(data.coins);
+        }
         // Trigger celebratory confetti
         confetti({
           particleCount: 80,
@@ -175,6 +187,82 @@ export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, na
       }
     } catch (err) {
       console.error('Failed to mark lesson complete:', err);
+    }
+  };
+
+  const handleAnswerSelect = (questionId: string, optionIdOrText: any) => {
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [questionId]: optionIdOrText
+    }));
+    setQuizError(null);
+    setQuizNotice(null);
+  };
+
+  const handleSubmitQuiz = async () => {
+    if (!lesson || !lesson.quiz || !lesson.quiz.questions || lesson.quiz.questions.length === 0) {
+      await handleMarkComplete();
+      return;
+    }
+
+    const questions = lesson.quiz.questions;
+    // Check if user answered all questions
+    const unanswered = questions.filter((q) => selectedAnswers[q.id] === undefined);
+    if (unanswered.length > 0) {
+      setQuizError(`Iltimos, barcha savollarga javob bering! (${questions.length - unanswered.length}/${questions.length} ta yechildi)`);
+      return;
+    }
+
+    setQuizChecking(true);
+    setQuizError(null);
+
+    // Verify answers locally
+    let allCorrect = true;
+    for (const q of questions) {
+      const selected = selectedAnswers[q.id];
+      const correctOpt = q.options?.find((o: any) => o.is_correct === 1 || o.is_correct === true);
+      if (correctOpt) {
+        if (selected !== correctOpt.id && selected !== correctOpt.text) {
+          allCorrect = false;
+        }
+      }
+    }
+
+    setQuizSubmitted(true);
+
+    if (!allCorrect) {
+      setQuizPassed(false);
+      setQuizError("❌ Ba'zi savollarga noto'g'ri javob berildi! Qaytadan urinib ko'ring. Barcha savollarni 100% to'g'ri topmaguningizcha keyingi dars ochilmaydi.");
+      setQuizChecking(false);
+      return;
+    }
+
+    // All correct! Pass quiz & complete lesson
+    try {
+      const token = localStorage.getItem('lison_token') || localStorage.getItem('ziyo_token');
+      const res = await fetch(`/api/lessons/${lessonId}/complete`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsCompleted(true);
+        setQuizPassed(true);
+        if (typeof data.coins === 'number') {
+          updateCoins(data.coins);
+        }
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      } else {
+        setQuizError(data.message || "Xatolik yuz berdi.");
+      }
+    } catch (err: any) {
+      setQuizError("Server bilan aloqada xatolik yuz berdi.");
+    } finally {
+      setQuizChecking(false);
     }
   };
 
@@ -350,9 +438,22 @@ export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, na
 
               {lesson.next_lesson && (
                 <button
-                  onClick={() => navigate(`/lessons/${lesson.next_lesson!.id}`)}
-                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 flex items-center gap-1"
+                  onClick={() => {
+                    if (!isCompleted) {
+                      document.getElementById('lesson-quiz-section')?.scrollIntoView({ behavior: 'smooth' });
+                      setQuizNotice("🔒 Keyingi darsga o'tish uchun quyidagi savollarga to'g'ri javob berishingiz shart!");
+                      return;
+                    }
+                    navigate(`/lessons/${lesson.next_lesson!.id}`);
+                  }}
+                  className={`px-4 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition ${
+                    isCompleted
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md cursor-pointer'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed opacity-80'
+                  }`}
+                  title={!isCompleted ? "Keyingi dars qulflangan: savollarni to'g'ri toping!" : "Keyingi darsga o'tish"}
                 >
+                  {!isCompleted && <Lock className="w-3.5 h-3.5 text-amber-500" />}
                   <span>Keyingi dars</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
@@ -360,6 +461,174 @@ export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, na
             </div>
           </div>
         </div>
+
+        {/* Interactive In-Lesson Quiz (Savol-Javob va Darsni Ochish) */}
+        {lesson.quiz && lesson.quiz.questions && lesson.quiz.questions.length > 0 && (
+          <div id="lesson-quiz-section" className="bg-white dark:bg-gray-900 rounded-3xl p-6 sm:p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6 scroll-mt-20">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-gray-800">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
+                    <Award className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <span>Dars Savol-Javoblari</span>
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 font-extrabold border border-emerald-200 dark:border-emerald-800">
+                        +10 🪙 Coin
+                      </span>
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Keyingi darsga o'tish uchun quyidagi savollarga to'g'ri javob bering.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {isCompleted ? (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold shadow-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span>Muvaffaqiyatli topshirildi (+10 Coin)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-bold">
+                  <Lock className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Keyingi dars qulflangan</span>
+                </div>
+              )}
+            </div>
+
+            {quizNotice && (
+              <div className="flex items-center gap-2.5 p-3.5 text-xs font-semibold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/50 rounded-2xl border border-amber-200 dark:border-amber-800 animate-pulse">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-500" />
+                <span>{quizNotice}</span>
+              </div>
+            )}
+
+            {quizError && (
+              <div className="flex items-center gap-2.5 p-3.5 text-xs font-semibold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/50 rounded-2xl border border-red-200 dark:border-red-900/60">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                <span>{quizError}</span>
+              </div>
+            )}
+
+            {isCompleted && (
+              <div className="p-4 bg-emerald-50/80 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🎉</span>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-emerald-800 dark:text-emerald-200">
+                      Dars muvaffaqiyatli tamomlandi!
+                    </h4>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      Barcha savollarga to'g'ri javob berdingiz, hisobingizga +10 🪙 Coin qo'shildi va keyingi dars ochildi.
+                    </p>
+                  </div>
+                </div>
+                {lesson.next_lesson && (
+                  <button
+                    onClick={() => navigate(`/lessons/${lesson.next_lesson!.id}`)}
+                    className="shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <span>Keyingi dars</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Questions Form */}
+            <div className="space-y-6">
+              {lesson.quiz.questions.map((q, qIndex) => {
+                const userSelected = selectedAnswers[q.id];
+                return (
+                  <div key={q.id} className="p-4 sm:p-5 rounded-2xl bg-gray-50/70 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-xs font-black shrink-0">
+                          {qIndex + 1}
+                        </span>
+                        <span>{q.question_text}</span>
+                      </h4>
+                      <span className="text-[11px] font-semibold text-gray-400 shrink-0">
+                        {q.points || 10} ball
+                      </span>
+                    </div>
+
+                    {/* Options list */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      {q.options?.map((opt: any, optIdx: number) => {
+                        const optKey = opt.id || opt.text;
+                        const isSelected = userSelected === optKey || userSelected === opt.text;
+                        const isCorrect = opt.is_correct === 1 || opt.is_correct === true;
+
+                        let optionStyle = 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-indigo-400';
+                        if (isSelected && !quizSubmitted) {
+                          optionStyle = 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-500 shadow-sm font-bold';
+                        } else if (quizSubmitted) {
+                          if (isCorrect) {
+                            optionStyle = 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border-emerald-500 font-bold shadow-sm';
+                          } else if (isSelected && !isCorrect) {
+                            optionStyle = 'bg-red-50 dark:bg-red-950/60 text-red-800 dark:text-red-200 border-red-500 font-semibold';
+                          }
+                        }
+
+                        return (
+                          <button
+                            key={opt.id || optIdx}
+                            type="button"
+                            onClick={() => handleAnswerSelect(q.id, optKey)}
+                            disabled={isCompleted}
+                            className={`p-3 rounded-xl border text-left text-xs transition flex items-center justify-between gap-2 cursor-pointer ${optionStyle}`}
+                          >
+                            <span className="flex items-center gap-2.5">
+                              <span className="w-5 h-5 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase">
+                                {String.fromCharCode(65 + optIdx)}
+                              </span>
+                              <span>{opt.text}</span>
+                            </span>
+                            {quizSubmitted && isCorrect && (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                            )}
+                            {quizSubmitted && isSelected && !isCorrect && (
+                              <X className="w-4 h-4 text-red-500 shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {quizSubmitted && q.explanation && (
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-gray-900/60 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800 mt-2">
+                        💡 <strong>Izoh:</strong> {q.explanation}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Submit Quiz Button */}
+            {!isCompleted && (
+              <div className="pt-2 flex flex-wrap items-center justify-between gap-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Barcha savollarni to'g'ri toping va darsni muvaffaqiyatli tamomlang.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSubmitQuiz}
+                  disabled={quizChecking}
+                  className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl text-xs font-bold shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition active:scale-95 cursor-pointer"
+                >
+                  <Award className="w-4 h-4" />
+                  <span>
+                    {quizChecking ? 'Tekshirilmoqda...' : 'Javoblarni Tekshirish va Darsni Yakunlash (+10 🪙 Coin)'}
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tabbed Learning Content */}
         <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 sm:p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6">

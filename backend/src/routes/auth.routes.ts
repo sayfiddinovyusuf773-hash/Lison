@@ -32,8 +32,8 @@ router.post('/register', async (req: AuthRequest, res: Response): Promise<void> 
     const userId = 'usr-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
 
     await executeRun(
-      `INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 50, 1)`,
+      `INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level, coins)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 50, 1, 50)`,
       [userId, normalizedEmail, passwordHash, first_name.trim(), last_name.trim(), preferred_language || 'uz', learning_level || 'A1']
     );
 
@@ -68,6 +68,7 @@ router.post('/register', async (req: AuthRequest, res: Response): Promise<void> 
         learning_level: learning_level || 'A1',
         xp_points: 50,
         level: 1,
+        coins: 50,
         avatar: null
       }
     });
@@ -149,6 +150,7 @@ router.post('/login', async (req: AuthRequest, res: Response): Promise<void> => 
         learning_level: user.learning_level,
         xp_points: user.xp_points,
         level: user.level,
+        coins: user.coins !== undefined && user.coins !== null ? user.coins : 50,
         daily_goal_minutes: user.daily_goal_minutes
       }
     });
@@ -162,7 +164,7 @@ router.post('/login', async (req: AuthRequest, res: Response): Promise<void> => 
 router.get('/me', authenticateToken, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const user = await queryOne(
-      `SELECT id, email, first_name, last_name, avatar, preferred_language, learning_level, xp_points, level, daily_goal_minutes, role, created_at
+      `SELECT id, email, first_name, last_name, avatar, preferred_language, learning_level, xp_points, level, coins, daily_goal_minutes, role, created_at
        FROM users WHERE id = ?`,
       [req.user!.id]
     );
@@ -173,6 +175,7 @@ router.get('/me', authenticateToken, async (req: AuthRequest, res: Response): Pr
       success: true,
       user: {
         ...user,
+        coins: user?.coins !== undefined && user?.coins !== null ? user.coins : 50,
         streak: streak ? streak.current_streak : 1,
         longest_streak: streak ? streak.longest_streak : 1
       }

@@ -382,6 +382,16 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
                         </div>
                       )}
 
+                      {/* Pricing or Coin Pill if Paid and Not Enrolled */}
+                      {!isEnrolled && course.is_paid === 1 && (
+                        <div className="flex items-center justify-between text-xs py-1 px-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-850 rounded-xl">
+                          <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Ochish narxi:</span>
+                          <span className="font-extrabold text-amber-700 dark:text-amber-300 flex items-center gap-1">
+                            🪙 {course.price_coins || 100} Coin
+                          </span>
+                        </div>
+                      )}
+
                       {/* Action Button */}
                       <button
                         onClick={(e) => {
@@ -391,11 +401,15 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
                         className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition duration-200 cursor-pointer ${
                           isEnrolled
                             ? 'bg-[#635BFF]/10 text-[#635BFF] dark:text-[#8B7CFF] hover:bg-[#635BFF] hover:text-white'
+                            : course.is_paid
+                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-gray-950 font-black shadow-md shadow-amber-500/20'
                             : 'bg-[#F7F8FC] dark:bg-[#1A223B] text-[#171A2B] dark:text-white hover:bg-[#635BFF] hover:text-white'
                         }`}
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>{isEnrolled ? 'Davom ettirish' : 'Kursni boshlash'}</span>
+                        <span>
+                          {isEnrolled ? 'Davom ettirish' : course.is_paid ? `🪙 ${course.price_coins || 100} Coin bilan ochish` : 'Kursni boshlash'}
+                        </span>
                       </button>
                     </div>
                   </div>

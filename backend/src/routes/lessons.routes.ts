@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { queryAll, queryOne, executeRun } from '../db/index';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
+import { getBeginnerQuestionsForLanguage } from '../utils/languageQuestions';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response): P
     const userId = req.user!.id;
 
     const lesson = await queryOne(
-      `SELECT l.*, c.title as course_title, c.slug as course_slug
+      `SELECT l.*, c.title as course_title, c.slug as course_slug, c.language as course_language
        FROM lessons l
        JOIN courses c ON l.course_id = c.id
        WHERE l.id = ?`,
@@ -46,10 +47,65 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response): P
     const nextLesson = currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null;
 
     // Check if there is an associated quiz
-    const quiz = await queryOne(
+    let quiz = await queryOne(
       `SELECT id, title, passing_score, time_limit_minutes FROM quizzes WHERE lesson_id = ? OR course_id = ? LIMIT 1`,
       [lesson.id, lesson.course_id]
     );
+
+    let questions: any[] = [];
+    if (quiz) {
+      const qRows = await queryAll(
+        `SELECT id, question_type, question_text, points, explanation FROM quiz_questions WHERE quiz_id = ? ORDER BY order_index ASC`,
+        [quiz.id]
+      );
+      for (const q of qRows) {
+        const opts = await queryAll(
+          `SELECT id, option_text, is_correct FROM quiz_options WHERE question_id = ? ORDER BY order_index ASC`,
+          [q.id]
+        );
+        questions.push({
+          id: q.id,
+          question_text: q.question_text,
+          points: q.points || 10,
+          explanation: q.explanation || '',
+          options: opts.map((o: any) => ({
+            id: o.id,
+            text: o.option_text,
+            is_correct: o.is_correct === 1
+          }))
+        });
+      }
+    }
+
+    // If no questions exist in DB, automatically provide tailored 0-level beginner questions for the language
+    if (questions.length === 0) {
+      const autoQuestions = getBeginnerQuestionsForLanguage(
+        lesson.course_language || 'English',
+        lesson.order_index || 1,
+        lesson.title
+      );
+      quiz = {
+        id: 'auto-quiz-' + lesson.id,
+        title: `${lesson.title} — Dars Sinovi`,
+        passing_score: 70,
+        time_limit_minutes: 10
+      };
+      questions = autoQuestions.map((q, idx) => ({
+        id: `q-auto-${lesson.id}-${idx}`,
+        question_text: q.question_text,
+        points: q.points,
+        explanation: q.explanation,
+        options: q.options.map((o, oIdx) => ({
+          id: `opt-auto-${lesson.id}-${idx}-${oIdx}`,
+          text: o.text,
+          is_correct: o.is_correct
+        }))
+      }));
+    }
+
+    if (quiz) {
+      quiz.questions = questions;
+    }
 
     // Get user progress
     let progress = await queryOne(
@@ -309,8 +365,9 @@ router.post('/:id/complete', authenticateToken, async (req: AuthRequest, res: Re
     }
 
     if (newlyCompleted) {
-      // Award XP (+30 XP)
-      await executeRun(`UPDATE users SET xp_points = xp_points + 30 WHERE id = ?`, [userId]);
+      // Award XP (+30 XP) & Coins (+10 Coins)
+      await executeRun(`UPDATE users SET xp_points = xp_points + 30, coins = COALESCE(coins, 0) + 10 WHERE id = ?`, [userId]);
+      const updatedUser = await queryOne(`SELECT coins, xp_points FROM users WHERE id = ?`, [userId]);
 
       // Calculate total progress percentage for course
       const allLessons = await queryAll(`SELECT id FROM lessons WHERE course_id = ?`, [lesson.course_id]);
@@ -358,15 +415,22 @@ router.post('/:id/complete', authenticateToken, async (req: AuthRequest, res: Re
 
       res.json({
         success: true,
-        message: 'Dars muvaffaqiyatli tamomlandi! +30 XP qo\'shildi.',
+        message: 'Dars muvaffaqiyatli tamomlandi! +10 🪙 Coin va +30 XP qo\'shildi.',
         xp_earned: 30,
+        coins_earned: 10,
+        coins: updatedUser?.coins ?? 50,
         progress_percent: percent,
         is_course_completed: isCourseCompleted === 1
       });
       return;
     }
 
-    res.json({ success: true, message: 'Dars avval tamomlangan.' });
+    const curr = await queryOne(`SELECT coins FROM users WHERE id = ?`, [userId]);
+    res.json({
+      success: true,
+      message: 'Dars avval tamomlangan.',
+      coins: curr?.coins ?? 50
+    });
   } catch (err) {
     console.error('Complete lesson error:', err);
     res.status(500).json({ success: false, message: 'Darsni yakunlashda xatolik.' });

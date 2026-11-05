@@ -12,6 +12,7 @@ export interface User {
   xp_points: number;
   level: number;
   daily_goal_minutes: number;
+  coins?: number;
   streak?: number;
   longest_streak?: number;
   created_at?: string;
@@ -52,6 +53,7 @@ export interface Course {
   is_paid?: number;
   price?: number;
   currency?: string;
+  price_coins?: number;
   enrollment_count: number;
   rating: number;
   is_enrolled?: boolean;
@@ -141,7 +143,13 @@ export interface Lesson {
   materials_url?: string;
   prev_lesson?: { id: string; title: string } | null;
   next_lesson?: { id: string; title: string } | null;
-  quiz?: { id: string; title: string; passing_score: number; time_limit_minutes: number } | null;
+  quiz?: {
+    id: string;
+    title: string;
+    passing_score: number;
+    time_limit_minutes: number;
+    questions?: any[];
+  } | null;
   progress: {
     is_completed: number;
     playback_time_seconds: number;

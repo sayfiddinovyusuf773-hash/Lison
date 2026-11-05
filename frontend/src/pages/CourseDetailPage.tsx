@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import confetti from 'canvas-confetti';
 import { Course } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -28,12 +29,13 @@ interface CourseDetailPageProps {
 }
 
 export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ courseId, navigate }) => {
-  const { user, openAuthModal } = useAuth();
+  const { user, openAuthModal, updateCoins } = useAuth();
   const { t } = useLanguage();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [unlockingCoins, setUnlockingCoins] = useState(false);
 
   // Payment Request Modal state
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -194,6 +196,57 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ courseId, na
     }
   };
 
+  const handleUnlockWithCoins = async () => {
+    if (!user) {
+      openAuthModal('login');
+      return;
+    }
+    const requiredCoins = course?.price_coins || 100;
+    const currentCoins = user.coins !== undefined && user.coins !== null ? user.coins : 50;
+
+    if (currentCoins < requiredCoins) {
+      alert(`Sizda tangalar yetarli emas.\nSizdagi tangalar: ${currentCoins} 🪙\nKursni ochish uchun: ${requiredCoins} 🪙 kerak.\n\nDarslarni o'qib, savollarga to'g'ri javob berib tangalar to'plang!`);
+      return;
+    }
+
+    if (!confirm(`"${course?.title}" kursini ${requiredCoins} ta Coin 🪙 evaziga ochishni tasdiqlaysizmi?`)) {
+      return;
+    }
+
+    setUnlockingCoins(true);
+    try {
+      const token = localStorage.getItem('lison_token') || localStorage.getItem('ziyo_token');
+      const res = await fetch(`/api/courses/${courseId}/unlock-with-coins`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (typeof data.coins === 'number') {
+          updateCoins(data.coins);
+        }
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+        setCourse((prev) => (prev ? { ...prev, is_enrolled: true } : null));
+        alert(data.message || 'Kurs tangalar evaziga ochildi!');
+        const firstLessonId = data.first_lesson_id || course?.curriculum?.[0]?.lessons?.[0]?.id;
+        if (firstLessonId) {
+          navigate(`/lessons/${firstLessonId}`);
+        }
+      } else {
+        alert(data.message || 'Kursni ochishda xatolik yuz berdi.');
+      }
+    } catch (err) {
+      console.error('Unlock error:', err);
+      alert('Server bilan bog\'lanishda xatolik.');
+    } finally {
+      setUnlockingCoins(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 animate-pulse space-y-8">
@@ -288,41 +341,54 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ courseId, na
               </div>
 
               {/* CTA Action Button */}
-              <div className="pt-4 flex flex-wrap items-center gap-4">
-                <button
-                  onClick={handleEnrollOrContinue}
-                  disabled={enrolling}
-                  className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm rounded-2xl shadow-xl shadow-indigo-500/25 flex items-center gap-2.5 transition transform hover:-translate-y-0.5 active:translate-y-0"
-                >
-                  {course.is_enrolled ? (
-                    <>
-                      <PlayCircle className="w-5 h-5" />
-                      <span>Darsni Davom Ettirish ({course.progress_percent || 0}%)</span>
-                    </>
-                  ) : isPaid ? (
-                    isPending ? (
-                      <>
-                        <Clock className="w-5 h-5 text-amber-300 animate-pulse" />
-                        <span>To'lov So'rovi Kutilmoqda (Administratorga yuborilgan)</span>
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="w-5 h-5" />
-                        <span>Kursga Yozilish ({course.price ? `${course.price.toLocaleString()} UZS` : 'Pullik'})</span>
-                      </>
-                    )
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      <span>{enrolling ? 'Yozilmoqda...' : 'Kursni Bepul Boshlash'}</span>
-                    </>
-                  )}
-                </button>
+              <div className="pt-4 flex flex-wrap items-center gap-3">
+                {course.is_enrolled ? (
+                  <button
+                    onClick={handleEnrollOrContinue}
+                    disabled={enrolling}
+                    className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm rounded-2xl shadow-xl shadow-indigo-500/25 flex items-center gap-2.5 transition transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  >
+                    <PlayCircle className="w-5 h-5" />
+                    <span>Darsni Davom Ettirish ({course.progress_percent || 0}%)</span>
+                  </button>
+                ) : isPaid ? (
+                  <>
+                    <button
+                      onClick={handleUnlockWithCoins}
+                      disabled={unlockingCoins}
+                      className="px-6 py-3.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-gray-950 font-black text-sm rounded-2xl shadow-xl shadow-amber-500/30 flex items-center gap-2 transition transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                    >
+                      <span className="text-lg">🪙</span>
+                      <span>
+                        {unlockingCoins ? 'Ochilmoqda...' : `${course.price_coins || 100} Coin bilan ochish`}
+                      </span>
+                    </button>
 
-                {isPaid && !course.is_enrolled && !isPending && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    To'lov so'rovi yuborilgach, administratorga darhol xabar boradi.
-                  </span>
+                    {isPending ? (
+                      <div className="px-6 py-3.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-bold text-xs rounded-2xl flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-500 animate-pulse" />
+                        <span>To'lov so'rovi kutilmoqda</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleEnrollOrContinue}
+                        disabled={enrolling}
+                        className="px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm rounded-2xl shadow-md flex items-center gap-2 transition transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>To'lov so'rovi ({course.price ? `${course.price.toLocaleString()} UZS` : 'Pullik'})</span>
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={handleEnrollOrContinue}
+                    disabled={enrolling}
+                    className="px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-2xl shadow-xl shadow-emerald-500/25 flex items-center gap-2.5 transition transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    <span>{enrolling ? 'Yozilmoqda...' : 'Kursni Bepul Boshlash'}</span>
+                  </button>
                 )}
               </div>
             </div>

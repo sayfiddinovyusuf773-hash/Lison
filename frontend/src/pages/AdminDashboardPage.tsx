@@ -69,11 +69,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
   const [newLang, setNewLang] = useState('English');
   const [newLevel, setNewLevel] = useState('A1');
   const [newDesc, setNewDesc] = useState('');
+  const [newPriceCoins, setNewPriceCoins] = useState<number>(100);
 
   // Pricing Modal state
   const [pricingCourse, setPricingCourse] = useState<any | null>(null);
   const [pricingIsPaid, setPricingIsPaid] = useState<boolean>(false);
   const [pricingAmount, setPricingAmount] = useState<number>(250000);
+  const [pricingCoins, setPricingCoins] = useState<number>(100);
   const [savingPricing, setSavingPricing] = useState(false);
 
   // Course Lessons & YouTube Video Management state
@@ -408,7 +410,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
         body: JSON.stringify({
           is_paid: pricingIsPaid ? 1 : 0,
           price: pricingAmount,
-          currency: 'UZS'
+          currency: 'UZS',
+          price_coins: pricingCoins
         })
       });
       const data = await res.json();
@@ -416,7 +419,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
         setCoursesList((prev) =>
           prev.map((c) =>
             c.id === pricingCourse.id
-              ? { ...c, is_paid: pricingIsPaid ? 1 : 0, price: pricingAmount }
+              ? { ...c, is_paid: pricingIsPaid ? 1 : 0, price: pricingAmount, price_coins: pricingCoins }
               : c
           )
         );
@@ -428,6 +431,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
       console.error('Pricing error:', err);
     } finally {
       setSavingPricing(false);
+    }
+  };
+
+  const handleGenerateAutoQuiz = async (lessonId: string) => {
+    try {
+      const token = getAuthToken();
+      const res = await fetch(`/api/admin/lessons/${lessonId}/auto-quiz`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || "0-darajali savollar muvaffaqiyatli yuklandi!");
+      } else {
+        alert(data.message || "Savollarni yuklashda xatolik.");
+      }
+    } catch {
+      alert("Server bilan aloqada xatolik.");
     }
   };
 
@@ -481,6 +502,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
           language: newLang,
           level: newLevel,
           description: newDesc,
+          price_coins: newPriceCoins,
           cover_image: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=600'
         })
       });
@@ -867,38 +889,56 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                 <h4 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
                   Yangi Kurs Ma'lumotlari
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <input
                     type="text"
                     required
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="Kurs nomi..."
+                    placeholder="Kurs nomi (masalan: Boshlang'ich Ingliz Tili)..."
                     className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border text-xs"
                   />
                   <select
                     value={newLang}
                     onChange={(e) => setNewLang(e.target.value)}
-                    className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border text-xs"
+                    className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border text-xs font-semibold"
                   >
-                    <option value="English">English</option>
-                    <option value="Russian">Russian</option>
-                    <option value="Korean">Korean</option>
-                    <option value="Arabic">Arabic</option>
-                    <option value="German">German</option>
-                    <option value="Turkish">Turkish</option>
-                    <option value="Uzbek">Uzbek</option>
+                    <option value="English">🇬🇧 Ingliz tili (English)</option>
+                    <option value="Russian">🇷🇺 Rus tili (Russian)</option>
+                    <option value="Korean">🇰🇷 Koreys tili (Korean)</option>
+                    <option value="Arabic">🇸🇦 Arab tili (Arabic)</option>
+                    <option value="Turkish">🇹🇷 Turk tili (Turkish)</option>
+                    <option value="German">🇩🇪 Nemis tili (German)</option>
+                    <option value="French">🇫🇷 Fransuz tili (French)</option>
+                    <option value="Spanish">🇪🇸 Ispan tili (Spanish)</option>
+                    <option value="Japanese">🇯🇵 Yapon tili (Japanese)</option>
+                    <option value="Chinese">🇨🇳 Xitoy tili (Chinese)</option>
                   </select>
                   <select
                     value={newLevel}
                     onChange={(e) => setNewLevel(e.target.value)}
-                    className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border text-xs"
+                    className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border text-xs font-semibold"
                   >
-                    <option value="A1">A1</option>
-                    <option value="A2">A2</option>
-                    <option value="B1">B1</option>
-                    <option value="B2">B2</option>
+                    <option value="A1">A1 - Boshlang'ich (0-daraja)</option>
+                    <option value="A2">A2 - Elementar</option>
+                    <option value="B1">B1 - O'rta</option>
+                    <option value="B2">B2 - Yuqori o'rta</option>
+                    <option value="C1">C1 - Ilg'or</option>
                   </select>
+                  <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-900 border rounded-xl">
+                    <span className="text-sm">🪙</span>
+                    <input
+                      type="number"
+                      min={10}
+                      step={10}
+                      value={newPriceCoins}
+                      onChange={(e) => setNewPriceCoins(Number(e.target.value))}
+                      placeholder="Coin narxi"
+                      className="w-full bg-transparent text-xs font-bold outline-none"
+                      title="Tangalar (Coin) orqali ochish narxi"
+                    />
+                    <span className="text-[10px] text-gray-400 font-bold">Coin</span>
+                  </div>
                 </div>
                 <textarea
                   rows={2}
@@ -969,6 +1009,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                         setPricingCourse(c);
                         setPricingIsPaid(c.is_paid === 1);
                         setPricingAmount(c.price || 250000);
+                        setPricingCoins(c.price_coins || 100);
                       }}
                       className="px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 transition"
                     >
@@ -1208,6 +1249,28 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                 </div>
               )}
 
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Tangalar Narxi (🪙 Coin orqali ochish)
+                </label>
+                <div className="relative">
+                  <span className="text-sm absolute left-3 top-2.5">🪙</span>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    step={10}
+                    value={pricingCoins}
+                    onChange={(e) => setPricingCoins(Number(e.target.value))}
+                    placeholder="100"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  O'quvchilar darslarni o'qib to'plagan tangalari evaziga ushbu kursni ochishi mumkin (Masalan: 100 tanga).
+                </p>
+              </div>
+
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
@@ -1323,6 +1386,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                           </div>
 
                           <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleGenerateAutoQuiz(lesson.id)}
+                              className="p-1.5 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/60 rounded-lg transition"
+                              title="Ushbu darsga 0-darajali savollarni biriktirish"
+                            >
+                              <Award className="w-3.5 h-3.5 text-amber-500" />
+                            </button>
                             <button
                               onClick={() => startEditLesson(lesson)}
                               className="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-lg transition"

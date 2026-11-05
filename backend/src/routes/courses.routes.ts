@@ -65,6 +65,11 @@ router.get('/', optionalAuth, async (req: AuthRequest, res: Response): Promise<v
         c.progress_percent = enr ? enr.progress_percent : 0;
         c.is_completed = enr ? !!enr.is_completed : false;
         c.is_wishlist = enr ? !!enr.is_wishlist : false;
+        c.price_coins = c.price_coins || 100;
+      });
+    } else {
+      courses.forEach((c: any) => {
+        c.price_coins = c.price_coins || 100;
       });
     }
 
@@ -230,6 +235,90 @@ router.post('/:id/enroll', authenticateToken, async (req: AuthRequest, res: Resp
   } catch (err) {
     console.error('Enrollment error:', err);
     res.status(500).json({ success: false, message: 'A\'zo bo\'lishda xatolik yuz berdi.' });
+  }
+});
+
+// Unlock Course with Coins (Tangalar evaziga til kursini ochish)
+router.post('/:id/unlock-with-coins', authenticateToken, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const courseId = req.params.id;
+    const userId = req.user!.id;
+
+    const course = await queryOne(
+      `SELECT id, title, price_coins, is_paid FROM courses WHERE id = ? AND deleted_at IS NULL`,
+      [courseId]
+    );
+
+    if (!course) {
+      res.status(404).json({ success: false, message: 'Kurs topilmadi.' });
+      return;
+    }
+
+    const existingEnr = await queryOne(
+      `SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?`,
+      [userId, courseId]
+    );
+
+    if (existingEnr) {
+      res.json({
+        success: true,
+        already_enrolled: true,
+        message: 'Siz bu kursga allaqachon a\'zo bo\'lgansiz.'
+      });
+      return;
+    }
+
+    const user = await queryOne(`SELECT coins FROM users WHERE id = ?`, [userId]);
+    const currentCoins = user?.coins !== undefined && user?.coins !== null ? user.coins : 50;
+    const requiredCoins = course.price_coins || 100;
+
+    if (currentCoins < requiredCoins) {
+      res.status(400).json({
+        success: false,
+        message: `Tangalaringiz yetarli emas. Sizda ${currentCoins} 🪙 bor, ushbu kursni ochish uchun ${requiredCoins} 🪙 kerak. Darslardagi testlarni yechib tanga yig'ishingiz mumkin!`
+      });
+      return;
+    }
+
+    // Deduct coins
+    const newCoins = currentCoins - requiredCoins;
+    await executeRun(`UPDATE users SET coins = ? WHERE id = ?`, [newCoins, userId]);
+
+    // Create enrollment
+    const firstLesson = await queryOne(
+      `SELECT id FROM lessons WHERE course_id = ? ORDER BY order_index ASC LIMIT 1`,
+      [courseId]
+    );
+    const enrId = 'enr-' + Date.now();
+    await executeRun(
+      `INSERT INTO enrollments (id, user_id, course_id, progress_percent, is_completed, last_accessed_lesson_id)
+       VALUES (?, ?, ?, 0, 0, ?)`,
+      [enrId, userId, courseId, firstLesson ? firstLesson.id : null]
+    );
+
+    await executeRun(`UPDATE courses SET enrollment_count = enrollment_count + 1 WHERE id = ?`, [courseId]);
+
+    // Send notification
+    await executeRun(
+      `INSERT INTO notifications (id, user_id, title, message, type, link_url)
+       VALUES (?, ?, 'Kurs tangalar evaziga ochildi! 🪙', ?, 'course', ?)`,
+      [
+        'notif-' + Date.now(),
+        userId,
+        `Tabriklaymiz! "${course.title}" kursi ${requiredCoins} tanga evaziga ochildi. Yangi tilni o'rganishni boshlang!`,
+        `/courses/${courseId}`
+      ]
+    );
+
+    res.json({
+      success: true,
+      coins: newCoins,
+      message: `Tabriklaymiz! "${course.title}" kursi ${requiredCoins} tanga evaziga ochildi!`,
+      first_lesson_id: firstLesson ? firstLesson.id : null
+    });
+  } catch (err) {
+    console.error('Unlock with coins error:', err);
+    res.status(500).json({ success: false, message: 'Kursni ochishda xatolik yuz berdi.' });
   }
 });
 

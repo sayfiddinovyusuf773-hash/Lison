@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { queryAll, queryOne, executeRun } from '../db/index';
 import { AuthRequest, authenticateToken, requireRoles, logAudit } from '../middleware/auth';
+import { getBeginnerQuestionsForLanguage } from '../utils/languageQuestions';
 
 const router = Router();
 
@@ -134,7 +135,7 @@ router.put('/users/:id', async (req: AuthRequest, res: Response): Promise<void> 
 // 3. Course Management (Create, Edit, Publish/Unpublish, Delete safely)
 router.post('/courses', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { title, language, level, description, cover_image, teacher_id, duration_hours, objectives } = req.body;
+    const { title, language, level, description, cover_image, teacher_id, duration_hours, objectives, price_coins } = req.body;
 
     if (!title || !language || !level || !description) {
       res.status(400).json({ success: false, message: 'Majburiy maydonlarni to\'ldiring.' });
@@ -145,8 +146,8 @@ router.post('/courses', async (req: AuthRequest, res: Response): Promise<void> =
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).substring(2, 5);
 
     await executeRun(
-      `INSERT INTO courses (id, title, slug, language, level, description, cover_image, teacher_id, duration_hours, objectives, is_published)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      `INSERT INTO courses (id, title, slug, language, level, description, cover_image, teacher_id, duration_hours, objectives, price_coins, is_published)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [
         courseId,
         title,
@@ -157,7 +158,8 @@ router.post('/courses', async (req: AuthRequest, res: Response): Promise<void> =
         cover_image || 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=600',
         teacher_id || null,
         duration_hours || 10,
-        JSON.stringify(objectives || [])
+        JSON.stringify(objectives || []),
+        Number(price_coins) || 100
       ]
     );
 
@@ -173,7 +175,7 @@ router.post('/courses', async (req: AuthRequest, res: Response): Promise<void> =
 router.put('/courses/:id', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const courseId = req.params.id;
-    const { title, language, level, description, cover_image, teacher_id, is_published, is_featured, duration_hours } = req.body;
+    const { title, language, level, description, cover_image, teacher_id, is_published, is_featured, duration_hours, price_coins } = req.body;
 
     await executeRun(
       `UPDATE courses
@@ -186,9 +188,10 @@ router.put('/courses/:id', async (req: AuthRequest, res: Response): Promise<void
            is_published = COALESCE(?, is_published),
            is_featured = COALESCE(?, is_featured),
            duration_hours = COALESCE(?, duration_hours),
+           price_coins = COALESCE(?, price_coins),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [title, language, level, description, cover_image, teacher_id, is_published, is_featured, duration_hours, courseId]
+      [title, language, level, description, cover_image, teacher_id, is_published, is_featured, duration_hours, price_coins !== undefined ? Number(price_coins) : null, courseId]
     );
 
     await logAudit(req.user!.id, 'UPDATE_COURSE', 'COURSES', `Updated course ${courseId}`, req.ip);
@@ -524,11 +527,11 @@ router.put('/settings', async (req: AuthRequest, res: Response): Promise<void> =
   }
 });
 
-// 6. Course Pricing & Paid Toggle
+// 6. Course Pricing & Paid Toggle (Pullik kurs va Tangalar / Coin narxi)
 router.put('/courses/:id/pricing', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const courseId = req.params.id;
-    const { is_paid, price, currency } = req.body;
+    const { is_paid, price, currency, price_coins } = req.body;
 
     const course = await queryOne(`SELECT id, title FROM courses WHERE id = ?`, [courseId]);
     if (!course) {
@@ -539,27 +542,155 @@ router.put('/courses/:id/pricing', async (req: AuthRequest, res: Response): Prom
     const paidVal = is_paid ? 1 : 0;
     const priceVal = Number(price) || 0;
     const currVal = currency || 'UZS';
+    const priceCoinsVal = price_coins !== undefined ? Number(price_coins) : 100;
 
     await executeRun(
-      `UPDATE courses SET is_paid = ?, price = ?, currency = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      [paidVal, priceVal, currVal, courseId]
+      `UPDATE courses SET is_paid = ?, price = ?, currency = ?, price_coins = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [paidVal, priceVal, currVal, priceCoinsVal, courseId]
     );
 
     await logAudit(
       req.user!.id,
       'UPDATE_COURSE_PRICING',
       'COURSES',
-      `Updated ${course.title} to ${paidVal ? 'PAID (' + priceVal + ' ' + currVal + ')' : 'FREE'}`,
+      `Updated ${course.title} to ${paidVal ? 'PAID (' + priceVal + ' ' + currVal + ')' : 'FREE'}, Coins: ${priceCoinsVal}`,
       req.ip
     );
 
     res.json({
       success: true,
-      message: `"${course.title}" kursi holati ${paidVal ? 'PULLIK (' + priceVal.toLocaleString() + ' ' + currVal + ')' : 'BEPUL'} ga o'zgartirildi!`
+      message: `"${course.title}" kursi holati ${paidVal ? 'PULLIK (' + priceVal.toLocaleString() + ' ' + currVal + ')' : 'BEPUL'} (${priceCoinsVal} 🪙) ga o'zgartirildi!`
     });
   } catch (err) {
     console.error('Update pricing error:', err);
     res.status(500).json({ success: false, message: 'Kurs narxini yangilashda xatolik.' });
+  }
+});
+
+// 6.1 Lesson Quiz Management (Savol-javoblar boshqaruvi)
+router.get('/lessons/:id/quiz', async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const lessonId = req.params.id;
+    const lesson = await queryOne(
+      `SELECT l.id, l.title, l.order_index, c.language as course_language, c.id as course_id
+       FROM lessons l
+       JOIN courses c ON l.course_id = c.id
+       WHERE l.id = ?`,
+      [lessonId]
+    );
+
+    if (!lesson) {
+      res.status(404).json({ success: false, message: 'Dars topilmadi.' });
+      return;
+    }
+
+    const quiz = await queryOne(`SELECT * FROM quizzes WHERE lesson_id = ?`, [lessonId]);
+    let questions: any[] = [];
+
+    if (quiz) {
+      questions = await queryAll(
+        `SELECT id, question_text, points, explanation, order_index
+         FROM quiz_questions WHERE quiz_id = ? ORDER BY order_index ASC`,
+        [quiz.id]
+      );
+      for (const q of questions) {
+        q.options = await queryAll(
+          `SELECT id, option_text as text, is_correct FROM quiz_options WHERE question_id = ? ORDER BY order_index ASC`,
+          [q.id]
+        );
+      }
+    } else {
+      // Return suggested 0-level beginner questions for this language
+      const autoQuestions = getBeginnerQuestionsForLanguage(
+        lesson.course_language,
+        lesson.order_index,
+        lesson.title
+      );
+      questions = autoQuestions.map((q, idx) => ({
+        id: `preview-${idx}`,
+        question_text: q.question_text,
+        points: q.points,
+        explanation: q.explanation,
+        options: q.options
+      }));
+    }
+
+    res.json({
+      success: true,
+      lesson,
+      quiz: quiz || null,
+      questions
+    });
+  } catch (err) {
+    console.error('Fetch lesson quiz error:', err);
+    res.status(500).json({ success: false, message: 'Dars savollarini yuklab bo\'lmadi.' });
+  }
+});
+
+// Auto-generate and save 0-level beginner quiz for a lesson
+router.post('/lessons/:id/auto-quiz', async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const lessonId = req.params.id;
+    const lesson = await queryOne(
+      `SELECT l.id, l.title, l.order_index, l.course_id, c.language as course_language
+       FROM lessons l
+       JOIN courses c ON l.course_id = c.id
+       WHERE l.id = ?`,
+      [lessonId]
+    );
+
+    if (!lesson) {
+      res.status(404).json({ success: false, message: 'Dars topilmadi.' });
+      return;
+    }
+
+    let quiz = await queryOne(`SELECT id FROM quizzes WHERE lesson_id = ?`, [lessonId]);
+    if (!quiz) {
+      const quizId = 'qz-' + Date.now();
+      await executeRun(
+        `INSERT INTO quizzes (id, course_id, lesson_id, title, description, passing_score, time_limit_minutes)
+         VALUES (?, ?, ?, ?, ?, 70, 10)`,
+        [quizId, lesson.course_id, lessonId, `${lesson.title} - Dars Savollari`, `${lesson.course_language} tili bo'yicha boshlang'ich 0-darajali savollar`]
+      );
+      quiz = { id: quizId };
+    }
+
+    // Delete existing questions for this quiz to replace with clean language questions
+    const oldQuestions = await queryAll(`SELECT id FROM quiz_questions WHERE quiz_id = ?`, [quiz.id]);
+    for (const oq of oldQuestions) {
+      await executeRun(`DELETE FROM quiz_options WHERE question_id = ?`, [oq.id]);
+    }
+    await executeRun(`DELETE FROM quiz_questions WHERE quiz_id = ?`, [quiz.id]);
+
+    const generated = getBeginnerQuestionsForLanguage(lesson.course_language, lesson.order_index, lesson.title);
+
+    for (let i = 0; i < generated.length; i++) {
+      const g = generated[i];
+      const qId = 'qq-' + Date.now() + '-' + i;
+      await executeRun(
+        `INSERT INTO quiz_questions (id, quiz_id, question_type, question_text, points, explanation, order_index)
+         VALUES (?, ?, 'multiple_choice', ?, ?, ?, ?)`,
+        [qId, quiz.id, g.question_text, g.points, g.explanation, i + 1]
+      );
+
+      for (let j = 0; j < g.options.length; j++) {
+        const opt = g.options[j];
+        await executeRun(
+          `INSERT INTO quiz_options (id, question_id, option_text, is_correct, order_index)
+           VALUES (?, ?, ?, ?, ?)`,
+          ['qo-' + Date.now() + '-' + i + '-' + j, qId, opt.text, opt.is_correct ? 1 : 0, j + 1]
+        );
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `${lesson.course_language} tili bo'yicha 0-darajali ${generated.length} ta savol muvaffaqiyatli saqlandi!`,
+      count: generated.length
+    });
+  } catch (err) {
+    console.error('Auto quiz error:', err);
+    res.status(500).json({ success: false, message: 'Savollarni yaratishda xatolik yuz berdi.' });
   }
 });
 

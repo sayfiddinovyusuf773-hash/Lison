@@ -67,6 +67,7 @@ export const initDatabase = async (): Promise<void> => {
       learning_level TEXT DEFAULT 'A1',
       daily_goal_minutes INTEGER DEFAULT 20,
       xp_points INTEGER DEFAULT 0,
+      coins INTEGER DEFAULT 50,
       level INTEGER DEFAULT 1,
       is_active INTEGER DEFAULT 1,
       is_suspended INTEGER DEFAULT 0,
@@ -130,6 +131,7 @@ export const initDatabase = async (): Promise<void> => {
       is_paid INTEGER DEFAULT 0, -- 0 = bepul, 1 = pullik
       price INTEGER DEFAULT 0, -- in UZS (e.g. 250000)
       currency TEXT DEFAULT 'UZS',
+      price_coins INTEGER DEFAULT 100, -- Coin narxi (tangalar evaziga ochish)
       enrollment_count INTEGER DEFAULT 0,
       rating REAL DEFAULT 5.0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -428,11 +430,15 @@ export const initDatabase = async (): Promise<void> => {
         console.error('Error executing schema SQL:', err);
         reject(err);
       } else {
-        // Safe schema migration for existing sqlite database: add is_paid, price, currency to courses if missing
+        // Safe schema migration for existing sqlite database: add is_paid, price, currency, price_coins, coins
         try {
           await executeRun(`ALTER TABLE courses ADD COLUMN is_paid INTEGER DEFAULT 0;`).catch(() => {});
           await executeRun(`ALTER TABLE courses ADD COLUMN price INTEGER DEFAULT 0;`).catch(() => {});
           await executeRun(`ALTER TABLE courses ADD COLUMN currency TEXT DEFAULT 'UZS';`).catch(() => {});
+          await executeRun(`ALTER TABLE courses ADD COLUMN price_coins INTEGER DEFAULT 100;`).catch(() => {});
+          await executeRun(`ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 50;`).catch(() => {});
+          await executeRun(`UPDATE users SET coins = 50 WHERE coins IS NULL;`).catch(() => {});
+          await executeRun(`UPDATE courses SET price_coins = 100 WHERE price_coins IS NULL;`).catch(() => {});
         } catch {}
 
         // Auto-seed sample courses and demo accounts if database is empty (e.g. initial Render deploy)

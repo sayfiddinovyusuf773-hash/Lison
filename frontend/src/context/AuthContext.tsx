@@ -9,6 +9,7 @@ interface AuthContextType {
   register: (data: any) => Promise<{ success: boolean; message?: string; user?: User }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  updateCoins: (coins: number) => void;
   openAuthModal: (mode?: 'login' | 'register' | 'admin') => void;
   closeAuthModal: () => void;
   isAuthModalOpen: boolean;
@@ -117,6 +118,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
+  const updateCoins = (newCoins: number) => {
+    setUser((prev) => (prev ? { ...prev, coins: newCoins } : null));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -127,6 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         refreshUser,
+        updateCoins,
         openAuthModal,
         closeAuthModal,
         isAuthModalOpen,

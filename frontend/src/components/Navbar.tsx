@@ -18,7 +18,8 @@ import {
   ChevronDown,
   CheckCheck,
   User as UserIcon,
-  BarChart3
+  BarChart3,
+  Shield
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -281,12 +282,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               </button>
             )}
 
-            {/* Auth: Profil (if logged in) OR Kirish (if guest) */}
+            {/* User Coin Balance Badge */}
+            {user && (
+              <div
+                title="Sizning tangalaringiz (Darslarni o'qib tangalarni ko'paytiring va yangi tillarni oching!)"
+                className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/80 rounded-xl text-amber-700 dark:text-amber-300 font-black text-xs shadow-sm transition hover:scale-105 cursor-help"
+              >
+                <span className="text-sm animate-pulse">🪙</span>
+                <span>{user.coins !== undefined && user.coins !== null ? user.coins : 50}</span>
+                <span className="hidden sm:inline text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Coin</span>
+              </div>
+            )}
+
+            {/* Auth: Profil (if logged in) OR Kirish & Admin (if guest) */}
             {user ? (
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-800 transition"
+                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-800 transition cursor-pointer"
                 >
                   <img
                     src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.first_name + ' ' + user.last_name)}&background=6366f1&color=fff`}
@@ -306,11 +319,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                         {user.first_name} {user.last_name}
                       </p>
                       <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
+                      <div className="mt-1 flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                        <span>🪙 {user.coins !== undefined && user.coins !== null ? user.coins : 50} tanga</span>
+                      </div>
                     </div>
 
                     <button
                       onClick={() => { handleNavClick('/dashboard'); setIsUserDropdownOpen(false); }}
-                      className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                      className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer"
                     >
                       <LayoutDashboard className="w-3.5 h-3.5 text-primary-500" />
                       <span>{t('nav.dashboard') || 'Profil'}</span>
@@ -319,9 +335,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                     {(user.role === 'admin' || user.role === 'super_admin') && (
                       <button
                         onClick={() => { handleNavClick('/admin'); setIsUserDropdownOpen(false); }}
-                        className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition"
+                        className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition cursor-pointer"
                       >
-                        <Settings className="w-3.5 h-3.5" />
+                        <Shield className="w-3.5 h-3.5" />
                         <span>{t('nav.admin') || 'Admin Panel'}</span>
                       </button>
                     )}
@@ -330,7 +346,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
 
                     <button
                       onClick={() => { logout(); setIsUserDropdownOpen(false); }}
-                      className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+                      className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>{t('nav.logout') || 'Chiqish'}</span>
@@ -339,12 +355,22 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                 )}
               </div>
             ) : (
-              <button
-                onClick={() => openAuthModal('login')}
-                className="px-4 py-1.5 text-xs font-bold text-white bg-[#635BFF] hover:bg-[#544BFF] active:scale-95 rounded-lg shadow-sm shadow-[#635BFF]/25 transition-all duration-150 cursor-pointer"
-              >
-                {t('nav.login') || 'Kirish'}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => openAuthModal('admin')}
+                  className="px-2.5 py-1.5 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  title="Administrator sifatida kirish (sayfiddinovyusuf773@gmail.com / 1234)"
+                >
+                  <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>Admin</span>
+                </button>
+                <button
+                  onClick={() => openAuthModal('login')}
+                  className="px-4 py-1.5 text-xs font-bold text-white bg-[#635BFF] hover:bg-[#544BFF] active:scale-95 rounded-xl shadow-sm shadow-[#635BFF]/25 transition-all duration-150 cursor-pointer"
+                >
+                  {t('nav.login') || 'Kirish'}
+                </button>
+              </div>
             )}
 
             {/* Mobile Hamburger Menu Toggle */}
@@ -380,6 +406,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             );
           })}
 
+          {user && (
+            <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800/60 my-1">
+              <span className="text-xs font-bold text-amber-900 dark:text-amber-200">Hisobingizdagi tangalar:</span>
+              <span className="text-sm font-extrabold text-amber-600 dark:text-amber-300 flex items-center gap-1">
+                🪙 {user.coins !== undefined && user.coins !== null ? user.coins : 50} Coin
+              </span>
+            </div>
+          )}
+
           {user && (user.role === 'admin' || user.role === 'super_admin') && (
             <div className="pt-2 border-t border-purple-100 dark:border-purple-900/40">
               <button
@@ -387,10 +422,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                   setIsMobileMenuOpen(false);
                   handleNavClick('/admin');
                 }}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md shadow-purple-500/20 transition"
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md shadow-purple-500/20 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
+                  <Shield className="w-4 h-4" />
                   <span>Admin Panel</span>
                 </div>
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/20 text-white font-medium">Boshqaruv</span>
@@ -399,13 +434,23 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
           )}
 
           {!user && (
-            <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80">
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  openAuthModal('admin');
+                }}
+                className="py-2.5 px-3 text-center text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Shield className="w-4 h-4" />
+                <span>Admin</span>
+              </button>
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   openAuthModal('login');
                 }}
-                className="w-full py-2.5 text-center text-sm font-bold text-white bg-primary-600 hover:bg-primary-500 rounded-lg shadow-sm transition"
+                className="py-2.5 px-3 text-center text-xs font-bold text-white bg-[#635BFF] hover:bg-[#544BFF] rounded-xl shadow-sm transition cursor-pointer"
               >
                 {t('nav.login') || 'Kirish'}
               </button>

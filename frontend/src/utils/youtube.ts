@@ -5,33 +5,39 @@
 export const formatYouTubeEmbedUrl = (rawUrl: string): string => {
   if (!rawUrl || typeof rawUrl !== 'string') return '';
   const trimmed = rawUrl.trim();
+  const embedParams = 'playsinline=1&enablejsapi=1&rel=0&modestbranding=1';
+
+  let videoId = '';
 
   // Already an embed url
-  if (trimmed.includes('youtube.com/embed/')) {
-    return trimmed;
+  const embedMatch = trimmed.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+  if (embedMatch && embedMatch[1]) {
+    videoId = embedMatch[1];
+  } else {
+    // Standard: https://www.youtube.com/watch?v=VIDEO_ID
+    const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+    if (watchMatch && watchMatch[1]) {
+      videoId = watchMatch[1];
+    } else {
+      // Short link: https://youtu.be/VIDEO_ID
+      const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+      if (shortMatch && shortMatch[1]) {
+        videoId = shortMatch[1];
+      } else {
+        // Shorts: https://www.youtube.com/shorts/VIDEO_ID
+        const shortsMatch = trimmed.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+        if (shortsMatch && shortsMatch[1]) {
+          videoId = shortsMatch[1];
+        } else if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+          // Plain 11-char ID
+          videoId = trimmed;
+        }
+      }
+    }
   }
 
-  // Standard: https://www.youtube.com/watch?v=VIDEO_ID
-  const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-  if (watchMatch && watchMatch[1]) {
-    return `https://www.youtube.com/embed/${watchMatch[1]}`;
-  }
-
-  // Short link: https://youtu.be/VIDEO_ID
-  const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
-  if (shortMatch && shortMatch[1]) {
-    return `https://www.youtube.com/embed/${shortMatch[1]}`;
-  }
-
-  // Shorts: https://www.youtube.com/shorts/VIDEO_ID
-  const shortsMatch = trimmed.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
-  if (shortsMatch && shortsMatch[1]) {
-    return `https://www.youtube.com/embed/${shortsMatch[1]}`;
-  }
-
-  // Plain 11-char ID
-  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
-    return `https://www.youtube.com/embed/${trimmed}`;
+  if (videoId) {
+    return `https://www.youtube.com/embed/${videoId}?${embedParams}`;
   }
 
   return trimmed;
