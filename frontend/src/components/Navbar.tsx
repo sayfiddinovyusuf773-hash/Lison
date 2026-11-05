@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   LogOut,
+  LogIn,
   LayoutDashboard,
   Settings,
   ChevronDown,
@@ -153,16 +154,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
           </nav>
 
           {/* Right: Language Selector, Theme Toggle & Kirish / Profil */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Language Switcher: UZ / EN / RU */}
             <div className="relative" ref={langRef}>
               <button
                 onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-[#171A2B] dark:text-[#F7F8FC] bg-[#F7F8FC] dark:bg-[#12182B] hover:bg-gray-100 dark:hover:bg-[#1A223B] rounded-lg border border-[#E6E8F0] dark:border-[#1F2840] transition cursor-pointer"
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-bold text-[#171A2B] dark:text-[#F7F8FC] bg-[#F7F8FC] dark:bg-[#12182B] hover:bg-gray-100 dark:hover:bg-[#1A223B] rounded-lg border border-[#E6E8F0] dark:border-[#1F2840] transition cursor-pointer"
               >
                 <Globe className="w-3.5 h-3.5 text-[#635BFF]" />
-                <span className="tracking-wide uppercase font-bold">{language}</span>
-                <ChevronDown className="w-3 h-3 text-gray-400" />
+                <span className="tracking-wide uppercase font-bold text-[11px] sm:text-xs">{language}</span>
+                <ChevronDown className="w-2.5 h-2.5 text-gray-400" />
               </button>
 
               {isLangDropdownOpen && (
@@ -205,19 +206,19 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             <button
               onClick={toggleDarkMode}
               aria-label="Toggle theme"
-              className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-[#F7F8FC] dark:bg-[#12182B] hover:bg-gray-100 dark:hover:bg-[#1A223B] rounded-lg border border-[#E6E8F0] dark:border-[#1F2840] transition cursor-pointer"
+              className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-[#F7F8FC] dark:bg-[#12182B] hover:bg-gray-100 dark:hover:bg-[#1A223B] rounded-lg border border-[#E6E8F0] dark:border-[#1F2840] transition cursor-pointer shrink-0"
             >
-              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-[#635BFF]" />}
+              {isDarkMode ? <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" /> : <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#635BFF]" />}
             </button>
 
             {/* Notifications Dropdown (when user is authenticated) */}
             {user && (
-              <div className="relative" ref={notifRef}>
+              <div className="relative hidden xs:block" ref={notifRef}>
                 <button
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
                   className="relative p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-800 transition"
                 >
-                  <Bell className="w-4 h-4" />
+                  <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-bold text-white bg-red-500 rounded-full animate-bounce">
                       {unreadCount}
@@ -275,7 +276,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             {user && (user.role === 'admin' || user.role === 'super_admin') && (
               <button
                 onClick={() => handleNavClick('/admin')}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl shadow-sm shadow-purple-500/25 transition active:scale-95 cursor-pointer"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl shadow-sm shadow-purple-500/25 transition active:scale-95 cursor-pointer shrink-0"
               >
                 <Settings className="w-3.5 h-3.5" />
                 <span>Admin Panel</span>
@@ -286,30 +287,52 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             {user && (
               <div
                 title="Sizning tangalaringiz (Darslarni o'qib tangalarni ko'paytiring va yangi tillarni oching!)"
-                className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/80 rounded-xl text-amber-700 dark:text-amber-300 font-black text-xs shadow-sm transition hover:scale-105 cursor-help"
+                className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/80 rounded-lg sm:rounded-xl text-amber-700 dark:text-amber-300 font-extrabold text-[11px] sm:text-xs shadow-sm shrink-0"
               >
-                <span className="text-sm animate-pulse">🪙</span>
+                <span className="text-xs sm:text-sm animate-pulse">🪙</span>
                 <span>{user.coins !== undefined && user.coins !== null ? user.coins : 0}</span>
-                <span className="hidden sm:inline text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Coin</span>
+                <span className="hidden md:inline text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Coin</span>
               </div>
             )}
 
-            {/* Auth: Profil (if logged in) OR Kirish & Admin (if guest) */}
-            {user ? (
-              <div className="relative" ref={userMenuRef}>
+            {/* Always visible: Kirish tugmasi (Telefonda ham, kompyuterda ham har doim ko'rinadi) */}
+            <button
+              onClick={() => openAuthModal('login')}
+              className="flex items-center gap-1 px-2.5 sm:px-3.5 py-1.5 text-xs font-bold text-white bg-[#635BFF] hover:bg-[#544BFF] active:scale-95 rounded-lg sm:rounded-xl shadow-sm shadow-[#635BFF]/25 transition-all duration-150 cursor-pointer shrink-0"
+              title="Hisobga kirish"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>{t('nav.login') || 'Kirish'}</span>
+            </button>
+
+            {/* If Guest: Admin shortcut */}
+            {!user && (
+              <button
+                onClick={() => openAuthModal('admin')}
+                className="hidden xs:flex items-center gap-1 px-2 py-1.5 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800/60 rounded-lg sm:rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
+                title="Administrator sifatida kirish"
+              >
+                <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span>Admin</span>
+              </button>
+            )}
+
+            {/* If Logged in: User Avatar & Dropdown */}
+            {user && (
+              <div className="relative shrink-0" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-800 transition cursor-pointer"
+                  className="flex items-center gap-1 pl-1 pr-1.5 sm:pl-1.5 sm:pr-2.5 py-1 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg sm:rounded-xl border border-gray-100 dark:border-gray-800 transition cursor-pointer"
                 >
                   <img
                     src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.first_name + ' ' + user.last_name)}&background=6366f1&color=fff`}
                     alt={user.first_name}
-                    className="w-7 h-7 rounded-lg object-cover"
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg object-cover"
                   />
                   <span className="text-xs font-bold text-gray-800 dark:text-gray-200 hidden sm:inline">
                     {user.first_name}
                   </span>
-                  <ChevronDown className="w-3 h-3 text-gray-400" />
+                  <ChevronDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-400" />
                 </button>
 
                 {isUserDropdownOpen && (
@@ -354,30 +377,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => openAuthModal('admin')}
-                  className="px-2.5 py-1.5 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                  title="Administrator sifatida kirish"
-                >
-                  <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                  <span>Admin</span>
-                </button>
-                <button
-                  onClick={() => openAuthModal('login')}
-                  className="px-4 py-1.5 text-xs font-bold text-white bg-[#635BFF] hover:bg-[#544BFF] active:scale-95 rounded-xl shadow-sm shadow-[#635BFF]/25 transition-all duration-150 cursor-pointer"
-                >
-                  {t('nav.login') || 'Kirish'}
-                </button>
-              </div>
             )}
 
             {/* Mobile Hamburger Menu Toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle navigation menu"
-              className="md:hidden p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              className="md:hidden p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0 cursor-pointer"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -387,7 +393,31 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
 
       {/* Mobile Drawer (Clean, minimal, 4 items) */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-b border-gray-100 dark:border-gray-800 bg-white/98 dark:bg-gray-950/98 px-4 pt-2 pb-5 space-y-1.5 animate-fade-in shadow-xl">
+        <div className="md:hidden border-b border-gray-100 dark:border-gray-800 bg-white/98 dark:bg-gray-950/98 px-4 pt-3 pb-6 space-y-2 animate-fade-in shadow-2xl">
+          {/* Mobile Direct Action Buttons at Top of Drawer */}
+          <div className="grid grid-cols-2 gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                openAuthModal('login');
+              }}
+              className="py-2.5 px-3 text-center text-xs font-bold text-white bg-[#635BFF] hover:bg-[#544BFF] rounded-xl shadow-md shadow-[#635BFF]/25 transition cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Kirish</span>
+            </button>
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                openAuthModal('admin');
+              }}
+              className="py-2.5 px-3 text-center text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Shield className="w-4 h-4" />
+              <span>Admin</span>
+            </button>
+          </div>
+
           {navItems.map((item) => {
             const active = isCurrentActive(item.path);
             return (
@@ -433,26 +463,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             </div>
           )}
 
-          {!user && (
-            <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 grid grid-cols-2 gap-2">
+          {user && (
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  openAuthModal('admin');
+                  logout();
                 }}
-                className="py-2.5 px-3 text-center text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold text-red-600 bg-red-50 dark:bg-red-950/40 rounded-xl hover:bg-red-100 transition cursor-pointer"
               >
-                <Shield className="w-4 h-4" />
-                <span>Admin</span>
-              </button>
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  openAuthModal('login');
-                }}
-                className="py-2.5 px-3 text-center text-xs font-bold text-white bg-[#635BFF] hover:bg-[#544BFF] rounded-xl shadow-sm transition cursor-pointer"
-              >
-                {t('nav.login') || 'Kirish'}
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Hisobdan chiqish</span>
               </button>
             </div>
           )}
