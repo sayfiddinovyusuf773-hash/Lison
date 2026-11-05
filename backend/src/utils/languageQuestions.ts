@@ -19,6 +19,56 @@ export const getBeginnerQuestionsForLanguage = (
 ): GeneratedQuestion[] => {
   const lang = (language || 'English').toLowerCase().trim();
 
+  // 0. IT VA SUN'IY INTELLEKT (AI & IT)
+  if (lang.includes('it') || lang.includes('ai') || lang.includes('sun\'iy') || lang.includes('intellekt') || lang.includes('artificial')) {
+    return [
+      {
+        question_text: "Sun'iy intellekt (AI - Artificial Intelligence) nima?",
+        points: 10,
+        explanation: "Sun'iy intellekt — insonning fikrlash, o'rganish va qaror qabul qilish kabi intellektual qobiliyatlarini kompyuter tizimlarida modellashtirishdir.",
+        options: [
+          { text: "Inson aql-idroki va fikrlash jarayonlarini modellashtiruvchi kompyuter tizimi", is_correct: true },
+          { text: "Faqatgina oddiy hisob-kitob qiluvchi kalkulyator", is_correct: false },
+          { text: "Kompyuterning monitor va klaviatura kabi apparat qismi", is_correct: false },
+          { text: "Internetdagi oddiy qidiruv sahifasi", is_correct: false }
+        ]
+      },
+      {
+        question_text: "ChatGPT, Claude va Gemini kabi zamonaviy tizimlar nima deb ataladi?",
+        points: 10,
+        explanation: "Ular Katta Til Modellari (LLM - Large Language Models) hamda Generativ Sun'iy Intellekt texnologiyalariga asoslangan.",
+        options: [
+          { text: "Katta Til Modellari (LLM) va Generativ AI", is_correct: true },
+          { text: "Oddiy antivirus dasturlari", is_correct: false },
+          { text: "Fayl arxivlovchi dasturlar", is_correct: false },
+          { text: "Raqamli fotoapparat drayverlari", is_correct: false }
+        ]
+      },
+      {
+        question_text: "Sun'iy intellekt va Machine Learning sohasida eng ko'p ishlatiladigan dasturlash tili qaysi?",
+        points: 10,
+        explanation: "Python boy kutubxonalari (TensorFlow, PyTorch, Scikit-learn) tufayli AI sohasida jahonda 1-o'rindagi dasturlash tilidir.",
+        options: [
+          { text: "Python", is_correct: true },
+          { text: "HTML", is_correct: false },
+          { text: "CSS", is_correct: false },
+          { text: "Photoshop", is_correct: false }
+        ]
+      },
+      {
+        question_text: '"Prompt Engineering" atamasi nimani anglatadi?',
+        points: 10,
+        explanation: "Prompt Engineering — bu sun'iy intellektdan eng sifatli, aniq va foydali natija olish uchun unga to'g'ri ko'rsatma (prompt) berish usulidir.",
+        options: [
+          { text: "AI ga eng to'g'ri va samarali ko'rsatmalar berish mahorati", is_correct: true },
+          { text: "Kompyuter simlarini ulash", is_correct: false },
+          { text: "Operatsion tizimni o'chirish", is_correct: false },
+          { text: "Printerga siyoh quyish", is_correct: false }
+        ]
+      }
+    ];
+  }
+
   // 1. INGLIZ TILI (English)
   if (lang.includes('ingliz') || lang.includes('english')) {
     if (lessonOrder === 1 || lessonTitle.toLowerCase().includes('alfavit') || lessonTitle.toLowerCase().includes('salom')) {

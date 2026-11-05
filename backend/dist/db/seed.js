@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.runSeed = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const index_1 = require("./index");
+const seed_ai_1 = require("./seed_ai");
 let isSeeding = false;
 const runSeed = async (skipInit = false) => {
     if (isSeeding)
@@ -724,6 +725,8 @@ const runSeed = async (skipInit = false) => {
             await (0, index_1.executeRun)(`INSERT OR REPLACE INTO system_settings (key, value, description)
        VALUES (?, ?, ?)`, [s.key, s.value, s.description]);
         }
+        // Seed IT & AI Course and Lessons
+        await (0, seed_ai_1.seedAICourse)();
         console.log('Seeding completed successfully!');
     }
     finally {

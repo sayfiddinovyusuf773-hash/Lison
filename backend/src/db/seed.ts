@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { db, initDatabase, executeRun } from './index';
+import { seedAICourse } from './seed_ai';
 
 let isSeeding = false;
 
@@ -806,6 +807,9 @@ export const runSeed = async (skipInit = false): Promise<void> => {
       [s.key, s.value, s.description]
     );
   }
+
+  // Seed IT & AI Course and Lessons
+  await seedAICourse();
 
   console.log('Seeding completed successfully!');
   } finally {

@@ -10,6 +10,7 @@ export const LanguageGrid: React.FC<LanguageGridProps> = ({ navigate }) => {
   const { t } = useLanguage();
 
   const languages = [
+    { name: 'IT & AI', native: 'IT & Sun\'iy Intellekt', flag: '🤖', learners: '38,500+', courses: '15 ta dars', color: 'from-purple-500/20 to-indigo-500/20' },
     { name: 'English', native: 'Ingliz tili', flag: '🇬🇧', learners: '24,500+', courses: '12 ta kurs', color: 'from-blue-500/20 to-indigo-500/20' },
     { name: 'Russian', native: 'Rus tili', flag: '🇷🇺', learners: '22,100+', courses: '10 ta kurs', color: 'from-red-500/20 to-blue-500/20' },
     { name: 'Korean', native: 'Koreys tili', flag: '🇰🇷', learners: '19,800+', courses: '8 ta kurs', color: 'from-pink-500/20 to-rose-500/20' },

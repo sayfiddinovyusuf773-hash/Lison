@@ -40,7 +40,8 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
   const [selectedSort, setSelectedSort] = useState<string>('popularity');
 
   const languagesList = [
-    { id: 'all', label: 'Barcha tillar', flag: '🌐' },
+    { id: 'all', label: 'Barcha yo\'nalishlar', flag: '🌐' },
+    { id: 'IT & AI', label: 'IT & Sun\'iy Intellekt', flag: '🤖' },
     { id: 'English', label: 'Ingliz tili', flag: '🇬🇧' },
     { id: 'Russian', label: 'Rus tili', flag: '🇷🇺' },
     { id: 'Korean', label: 'Koreys tili', flag: '🇰🇷' },
