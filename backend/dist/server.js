@@ -113,17 +113,26 @@ app.listen(Number(PORT), HOST, () => {
 (0, index_1.initDatabase)()
     .then(async () => {
     console.log(`📚 Relational Database connected & verified.`);
-    // Sync Admin credentials from environment variables if configured
-    if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
-        try {
-            const adminEmail = process.env.ADMIN_EMAIL.toLowerCase().trim();
-            const hash = await bcryptjs_1.default.hash(process.env.ADMIN_PASSWORD.trim(), 10);
-            await (0, index_1.executeRun)(`UPDATE users SET email = ?, password_hash = ? WHERE role = 'super_admin' OR id = 'usr-admin-1'`, [adminEmail, hash]);
-            console.log(`🔐 Super Admin credentials synchronized from environment variables: ${adminEmail}`);
+    // Ensure Super Admin accounts have password '1234' (or process.env.ADMIN_PASSWORD)
+    try {
+        const adminPass = process.env.ADMIN_PASSWORD || '1234';
+        const hash = await bcryptjs_1.default.hash(adminPass, 10);
+        // Update existing super_admin password to '1234'
+        await (0, index_1.executeRun)(`UPDATE users SET password_hash = ? WHERE role = 'super_admin' OR id = 'usr-admin-1'`, [hash]);
+        // Also ensure sayfiddinovyusuf773@gmail.com exists and is super_admin with '1234'
+        const adminEmail = (process.env.ADMIN_EMAIL || 'sayfiddinovyusuf773@gmail.com').toLowerCase().trim();
+        const existingAdmin = await (0, index_1.queryOne)(`SELECT id FROM users WHERE email = ?`, [adminEmail]);
+        if (existingAdmin) {
+            await (0, index_1.executeRun)(`UPDATE users SET role = 'super_admin', password_hash = ? WHERE id = ?`, [hash, existingAdmin.id]);
         }
-        catch (err) {
-            console.warn('Admin env sync notice:', err.message);
+        else {
+            await (0, index_1.executeRun)(`INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level)
+           VALUES (?, ?, ?, 'Admin', 'Yusuf', 'uz', 'C2', 'super_admin', 10000, 50)`, ['usr-admin-sayfiddin', adminEmail, hash]);
         }
+        console.log(`🔐 Admin security verified: password '1234' active for ${adminEmail} and admin@ziyo.uz`);
+    }
+    catch (err) {
+        console.warn('Admin password initialization notice:', err.message);
     }
 })
     .catch((error) => {

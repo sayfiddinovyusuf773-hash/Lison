@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import https from 'https';
 
-import { initDatabase, executeRun } from './db/index';
+import { initDatabase, executeRun, queryOne } from './db/index';
 import bcrypt from 'bcryptjs';
 import authRoutes from './routes/auth.routes';
 import coursesRoutes from './routes/courses.routes';
@@ -121,19 +121,35 @@ app.listen(Number(PORT), HOST, () => {
 initDatabase()
   .then(async () => {
     console.log(`📚 Relational Database connected & verified.`);
-    // Sync Admin credentials from environment variables if configured
-    if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
-      try {
-        const adminEmail = process.env.ADMIN_EMAIL.toLowerCase().trim();
-        const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD.trim(), 10);
+    // Ensure Super Admin accounts have password '1234' (or process.env.ADMIN_PASSWORD)
+    try {
+      const adminPass = process.env.ADMIN_PASSWORD || '1234';
+      const hash = await bcrypt.hash(adminPass, 10);
+      
+      // Update existing super_admin password to '1234'
+      await executeRun(
+        `UPDATE users SET password_hash = ? WHERE role = 'super_admin' OR id = 'usr-admin-1'`,
+        [hash]
+      );
+
+      // Also ensure sayfiddinovyusuf773@gmail.com exists and is super_admin with '1234'
+      const adminEmail = (process.env.ADMIN_EMAIL || 'sayfiddinovyusuf773@gmail.com').toLowerCase().trim();
+      const existingAdmin = await queryOne(`SELECT id FROM users WHERE email = ?`, [adminEmail]);
+      if (existingAdmin) {
         await executeRun(
-          `UPDATE users SET email = ?, password_hash = ? WHERE role = 'super_admin' OR id = 'usr-admin-1'`,
-          [adminEmail, hash]
+          `UPDATE users SET role = 'super_admin', password_hash = ? WHERE id = ?`,
+          [hash, existingAdmin.id]
         );
-        console.log(`🔐 Super Admin credentials synchronized from environment variables: ${adminEmail}`);
-      } catch (err: any) {
-        console.warn('Admin env sync notice:', err.message);
+      } else {
+        await executeRun(
+          `INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level)
+           VALUES (?, ?, ?, 'Admin', 'Yusuf', 'uz', 'C2', 'super_admin', 10000, 50)`,
+          ['usr-admin-sayfiddin', adminEmail, hash]
+        );
       }
+      console.log(`🔐 Admin security verified: password '1234' active for ${adminEmail} and admin@ziyo.uz`);
+    } catch (err: any) {
+      console.warn('Admin password initialization notice:', err.message);
     }
   })
   .catch((error) => {

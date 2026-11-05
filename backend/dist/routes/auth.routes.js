@@ -17,8 +17,8 @@ router.post('/register', async (req, res) => {
             res.status(400).json({ success: false, message: 'Barcha maydonlarni to\'liq to\'ldiring.' });
             return;
         }
-        if (password.length < 6) {
-            res.status(400).json({ success: false, message: 'Parol kamida 6 ta belgidan iborat bo\'lishi shart.' });
+        if (password.length < 4) {
+            res.status(400).json({ success: false, message: 'Parol kamida 4 ta belgidan iborat bo\'lishi shart.' });
             return;
         }
         const normalizedEmail = email.trim().toLowerCase();

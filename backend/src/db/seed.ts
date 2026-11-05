@@ -12,7 +12,7 @@ export const runSeed = async (skipInit = false): Promise<void> => {
     }
     console.log('Seeding initial educational data...');
 
-  const passwordHash = await bcrypt.hash('admin123', 10);
+  const passwordHash = await bcrypt.hash('1234', 10);
   const teacherPassHash = await bcrypt.hash('teacher123', 10);
   const studentPassHash = await bcrypt.hash('student123', 10);
 

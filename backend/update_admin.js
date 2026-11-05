@@ -18,16 +18,31 @@ bcrypt.hash(password, 10, (err, hash) => {
     console.error('Hash error:', err);
     process.exit(1);
   }
-  db.run(
-    "UPDATE users SET email = ?, password_hash = ? WHERE role = 'super_admin' OR id = 'usr-admin-1'",
-    [email.toLowerCase().trim(), hash],
-    function(runErr) {
-      if (runErr) {
-        console.error('Database update error:', runErr);
-        process.exit(1);
-      }
-      console.log(`✅ Admin muvaffaqiyatli yangilandi! Email: ${email}, o'zgartirilgan qatorlar: ${this.changes}`);
-      db.close();
+  db.get("SELECT id FROM users WHERE email = ?", [email.toLowerCase().trim()], (getErr, row) => {
+    if (getErr) {
+      console.error(getErr);
+      process.exit(1);
     }
-  );
+    if (row) {
+      db.run(
+        "UPDATE users SET role = 'super_admin', password_hash = ? WHERE id = ?",
+        [hash, row.id],
+        function(runErr) {
+          if (runErr) throw runErr;
+          console.log(`✅ Admin muvaffaqiyatli yangilandi! Email: ${email}, o'zgartirilgan: ${this.changes}`);
+          db.close();
+        }
+      );
+    } else {
+      db.run(
+        "INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level) VALUES (?, ?, ?, 'Admin', 'LISON', 'uz', 'C2', 'super_admin', 10000, 50)",
+        ['usr-admin-' + Date.now(), email.toLowerCase().trim(), hash],
+        function(runErr) {
+          if (runErr) throw runErr;
+          console.log(`✅ Yangi Admin yaratildi! Email: ${email}`);
+          db.close();
+        }
+      );
+    }
+  });
 });

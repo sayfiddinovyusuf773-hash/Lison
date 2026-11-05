@@ -16,7 +16,7 @@ const runSeed = async (skipInit = false) => {
             await (0, index_1.initDatabase)();
         }
         console.log('Seeding initial educational data...');
-        const passwordHash = await bcryptjs_1.default.hash('admin123', 10);
+        const passwordHash = await bcryptjs_1.default.hash('1234', 10);
         const teacherPassHash = await bcryptjs_1.default.hash('teacher123', 10);
         const studentPassHash = await bcryptjs_1.default.hash('student123', 10);
         // 1. Roles

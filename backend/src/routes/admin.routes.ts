@@ -794,7 +794,7 @@ router.put('/profile', async (req: AuthRequest, res: Response): Promise<void> =>
       await executeRun(`UPDATE users SET email = ? WHERE id = ?`, [normalizedEmail, adminId]);
     }
 
-    if (password && password.trim().length >= 6) {
+    if (password && password.trim().length >= 4) {
       const hash = await bcrypt.hash(password.trim(), 10);
       await executeRun(`UPDATE users SET password_hash = ? WHERE id = ?`, [hash, adminId]);
     }

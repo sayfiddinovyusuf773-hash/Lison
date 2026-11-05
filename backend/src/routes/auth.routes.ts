@@ -16,8 +16,8 @@ router.post('/register', async (req: AuthRequest, res: Response): Promise<void> 
       return;
     }
 
-    if (password.length < 6) {
-      res.status(400).json({ success: false, message: 'Parol kamida 6 ta belgidan iborat bo\'lishi shart.' });
+    if (password.length < 4) {
+      res.status(400).json({ success: false, message: 'Parol kamida 4 ta belgidan iborat bo\'lishi shart.' });
       return;
     }
 
