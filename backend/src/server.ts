@@ -7,6 +7,7 @@ import fs from 'fs';
 import https from 'https';
 
 import { initDatabase, executeRun, queryOne } from './db/index';
+import { seedAICourse } from './db/seed_ai';
 import bcrypt from 'bcryptjs';
 import authRoutes from './routes/auth.routes';
 import coursesRoutes from './routes/courses.routes';
@@ -150,6 +151,17 @@ initDatabase()
       console.log(`🔐 Admin security verified: password '1234' active for ${adminEmail} and admin@ziyo.uz`);
     } catch (err: any) {
       console.warn('Admin password initialization notice:', err.message);
+    }
+
+    // Ensure IT & Sun'iy Intellekt Course is always present
+    try {
+      const aiCourse = await queryOne(`SELECT id FROM courses WHERE id = 'crs-it-ai'`);
+      if (!aiCourse) {
+        await seedAICourse();
+        console.log("🤖 IT & Sun'iy Intellekt (AI) course verified and active!");
+      }
+    } catch (err: any) {
+      console.warn('AI course check notice:', err.message);
     }
   })
   .catch((error) => {

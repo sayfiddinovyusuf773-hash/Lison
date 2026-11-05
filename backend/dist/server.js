@@ -11,6 +11,7 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const https_1 = __importDefault(require("https"));
 const index_1 = require("./db/index");
+const seed_ai_1 = require("./db/seed_ai");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const courses_routes_1 = __importDefault(require("./routes/courses.routes"));
@@ -133,6 +134,17 @@ app.listen(Number(PORT), HOST, () => {
     }
     catch (err) {
         console.warn('Admin password initialization notice:', err.message);
+    }
+    // Ensure IT & Sun'iy Intellekt Course is always present
+    try {
+        const aiCourse = await (0, index_1.queryOne)(`SELECT id FROM courses WHERE id = 'crs-it-ai'`);
+        if (!aiCourse) {
+            await (0, seed_ai_1.seedAICourse)();
+            console.log("🤖 IT & Sun'iy Intellekt (AI) course verified and active!");
+        }
+    }
+    catch (err) {
+        console.warn('AI course check notice:', err.message);
     }
 })
     .catch((error) => {
