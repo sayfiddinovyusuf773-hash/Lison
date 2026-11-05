@@ -111,7 +111,7 @@ export const AppContent: React.FC = () => {
         </Suspense>
       </main>
       <Footer navigate={navigate} />
-      <AuthModal />
+      <AuthModal navigate={navigate} />
     </div>
   );
 };

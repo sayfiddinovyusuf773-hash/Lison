@@ -270,6 +270,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               </div>
             )}
 
+            {/* Direct Admin Panel shortcut button if user is admin */}
+            {user && (user.role === 'admin' || user.role === 'super_admin') && (
+              <button
+                onClick={() => handleNavClick('/admin')}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl shadow-sm shadow-purple-500/25 transition active:scale-95 cursor-pointer"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>Admin Panel</span>
+              </button>
+            )}
+
             {/* Auth: Profil (if logged in) OR Kirish (if guest) */}
             {user ? (
               <div className="relative" ref={userMenuRef}>
@@ -368,6 +379,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               </button>
             );
           })}
+
+          {user && (user.role === 'admin' || user.role === 'super_admin') && (
+            <div className="pt-2 border-t border-purple-100 dark:border-purple-900/40">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleNavClick('/admin');
+                }}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md shadow-purple-500/20 transition"
+              >
+                <div className="flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  <span>Admin Panel</span>
+                </div>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/20 text-white font-medium">Boshqaruv</span>
+              </button>
+            </div>
+          )}
 
           {!user && (
             <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80">

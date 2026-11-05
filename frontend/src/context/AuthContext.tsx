@@ -5,8 +5,8 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
-  register: (data: any) => Promise<{ success: boolean; message?: string }>;
+  login: (email: string, pass: string) => Promise<{ success: boolean; message?: string; user?: User }>;
+  register: (data: any) => Promise<{ success: boolean; message?: string; user?: User }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   openAuthModal: (mode?: 'login' | 'register') => void;
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUser();
   }, [token]);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; message?: string; user?: User }> => {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(data.token);
         setUser(data.user);
         setIsAuthModalOpen(false);
-        return { success: true };
+        return { success: true, user: data.user };
       }
       return { success: false, message: data.message || 'Kirishda xatolik.' };
     } catch (err: any) {
@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (formData: any): Promise<{ success: boolean; message?: string }> => {
+  const register = async (formData: any): Promise<{ success: boolean; message?: string; user?: User }> => {
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(data.token);
         setUser(data.user);
         setIsAuthModalOpen(false);
-        return { success: true };
+        return { success: true, user: data.user };
       }
       return { success: false, message: data.message || 'Ro\'yxatdan o\'tishda xatolik.' };
     } catch (err: any) {

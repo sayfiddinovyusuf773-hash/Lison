@@ -4,7 +4,11 @@ import { useLanguage } from '../context/LanguageContext';
 import { LisonLogo } from './brand/LisonLogo';
 import { X, Mail, Lock, User as UserIcon, Sparkles, CheckCircle2, ShieldAlert } from 'lucide-react';
 
-export const AuthModal: React.FC = () => {
+interface AuthModalProps {
+  navigate?: (path: string) => void;
+}
+
+export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
   const { isAuthModalOpen, closeAuthModal, authModalMode, login, register } = useAuth();
   const { t } = useLanguage();
 
@@ -34,7 +38,11 @@ export const AuthModal: React.FC = () => {
     try {
       if (mode === 'login') {
         const res = await login(email, password);
-        if (!res.success) {
+        if (res.success) {
+          if (res.user?.role === 'admin' || res.user?.role === 'super_admin') {
+            if (navigate) navigate('/admin');
+          }
+        } else {
           setError(res.message || 'Email yoki parol xato.');
         }
       } else {
@@ -78,8 +86,8 @@ export const AuthModal: React.FC = () => {
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {mode === 'login'
-              ? 'O\'rganishni davom ettirish uchun hisobingizga kiring'
-              : 'Bepul hisob oching va xalqaro tillarni o\'rganing'}
+              ? "O'quvchi yoki Administrator hisobingizga kiring"
+              : "Bepul hisob oching va xalqaro tillarni o'rganing"}
           </p>
         </div>
 
@@ -167,7 +175,9 @@ export const AuthModal: React.FC = () => {
               />
             </div>
             <p className="mt-1 text-[11px] text-gray-400">
-              Har bir o'quvchi o'zining shaxsiy Gmail pochtasi va paroli bilan kiradi.
+              {mode === 'login'
+                ? "O'quvchi yoki Admin o'zining Gmail pochtasi va paroli bilan kiradi."
+                : "O'quvchilar yangi hisob yaratish uchun o'z Gmail pochtasini kiritadilar."}
             </p>
           </div>
 
@@ -230,6 +240,14 @@ export const AuthModal: React.FC = () => {
             {loading ? 'Kutilmoqda...' : mode === 'login' ? 'Kirish' : 'Hisob Yaratish'}
           </button>
         </form>
+
+        {mode === 'login' && (
+          <div className="mt-4 p-3 bg-purple-50/70 dark:bg-purple-950/30 rounded-2xl border border-purple-100 dark:border-purple-900/40 text-center">
+            <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">
+              🛡️ <strong>Administrator uchun:</strong> Admin pochtangiz va parolingizni kiritib kirsangiz, avtomatik <strong>Admin Panel</strong> ochiladi.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
