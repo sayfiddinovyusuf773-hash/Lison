@@ -1,8 +1,9 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { BRAND } from '../config/brand';
 import { LisonLogo } from './brand/LisonLogo';
-import { ShieldCheck, Mail, MapPin } from 'lucide-react';
+import { ShieldCheck, Mail, MapPin, Shield } from 'lucide-react';
 
 interface FooterProps {
   navigate: (path: string) => void;
@@ -10,6 +11,7 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ navigate }) => {
   const { t } = useLanguage();
+  const { openAuthModal } = useAuth();
 
   return (
     <footer className="bg-white dark:bg-[#0B1020] border-t border-[#E6E8F0] dark:border-[#1F2840] pt-12 pb-8 transition-colors duration-300">
@@ -140,6 +142,15 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
                 <a href="#terms" onClick={(e) => { e.preventDefault(); alert("LISON Foydalanish Qoidalari: Platformadagi barcha ta'lim materiallari bepul shaxsiy o'rganish uchun mo'ljallangan."); }} className="hover:text-[#635BFF] dark:hover:text-white transition cursor-pointer">
                   Terms of Service
                 </a>
+              </li>
+              <li className="pt-1">
+                <button
+                  onClick={() => openAuthModal('admin')}
+                  className="hover:text-purple-600 dark:hover:text-purple-400 transition flex items-center gap-1.5 font-bold text-purple-600 dark:text-purple-400 cursor-pointer"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Admin Kirish</span>
+                </button>
               </li>
             </ul>
           </div>

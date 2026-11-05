@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { LisonLogo } from './brand/LisonLogo';
-import { X, Mail, Lock, User as UserIcon, Sparkles, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { X, Mail, Lock, User as UserIcon, ShieldAlert, Shield } from 'lucide-react';
 
 interface AuthModalProps {
   navigate?: (path: string) => void;
@@ -12,7 +12,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
   const { isAuthModalOpen, closeAuthModal, authModalMode, login, register } = useAuth();
   const { t } = useLanguage();
 
-  const [mode, setMode] = useState<'login' | 'register'>(authModalMode);
+  const [mode, setMode] = useState<'login' | 'register' | 'admin'>(authModalMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -36,11 +36,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
     setLoading(true);
 
     try {
-      if (mode === 'login') {
+      if (mode === 'login' || mode === 'admin') {
         const res = await login(email, password);
         if (res.success) {
-          if (res.user?.role === 'admin' || res.user?.role === 'super_admin') {
-            if (navigate) navigate('/admin');
+          if (mode === 'admin') {
+            if (res.user?.role === 'admin' || res.user?.role === 'super_admin') {
+              if (navigate) navigate('/admin');
+            } else {
+              setError("Ushbu hisobda Administrator huquqi mavjud emas.");
+            }
+          } else {
+            if (res.user?.role === 'admin' || res.user?.role === 'super_admin') {
+              if (navigate) navigate('/admin');
+            }
           }
         } else {
           setError(res.message || 'Email yoki parol xato.');
@@ -67,53 +75,80 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="relative w-full max-w-md p-6 bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
         {/* Glow decoration */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-gradient-to-r from-primary-500 via-emerald-400 to-amber-400"></div>
+        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 transition-all ${
+          mode === 'admin'
+            ? 'bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500'
+            : 'bg-gradient-to-r from-primary-500 via-emerald-400 to-amber-400'
+        }`}></div>
 
         <button
           onClick={closeAuthModal}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Brand header */}
-        <div className="text-center mb-6">
-          <div className="flex justify-center mb-3">
+        <div className="text-center mb-5">
+          <div className="flex justify-center mb-2.5">
             <LisonLogo size="md" showTagline={false} />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            {mode === 'login' ? 'LISON ga kirish' : 'LISON da ro\'yxatdan o\'tish'}
+          <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white flex items-center justify-center gap-2">
+            {mode === 'admin' ? (
+              <>
+                <Shield className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                <span>Admin Kirishi</span>
+              </>
+            ) : mode === 'login' ? (
+              'LISON ga kirish'
+            ) : (
+              'LISON da ro\'yxatdan o\'tish'
+            )}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {mode === 'login'
-              ? "O'quvchi yoki Administrator hisobingizga kiring"
-              : "Bepul hisob oching va xalqaro tillarni o'rganing"}
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {mode === 'admin'
+              ? 'Platformani to\'liq boshqarish uchun admin hisobingizga kiring'
+              : mode === 'login'
+              ? 'O\'rganishni davom ettirish uchun shaxsiy hisobingizga kiring'
+              : 'Bepul hisob oching va xalqaro tillarni o\'rganing'}
           </p>
         </div>
 
-        {/* Tab switch */}
-        <div className="flex p-1 mb-5 bg-gray-100 dark:bg-gray-800 rounded-2xl">
+        {/* 3-Tab Switch: Kirish | Boshlash | Admin */}
+        <div className="grid grid-cols-3 p-1 mb-5 bg-gray-100 dark:bg-gray-800 rounded-2xl gap-1">
           <button
             type="button"
             onClick={() => { setMode('login'); setError(null); }}
-            className={`flex-1 py-2 text-sm font-semibold rounded-xl transition ${
+            className={`py-2 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer ${
               mode === 'login'
                 ? 'bg-white dark:bg-gray-900 text-primary-600 dark:text-primary-400 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            {t('nav.login')}
+            {t('nav.login') || 'Kirish'}
           </button>
           <button
             type="button"
             onClick={() => { setMode('register'); setError(null); }}
-            className={`flex-1 py-2 text-sm font-semibold rounded-xl transition ${
+            className={`py-2 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer ${
               mode === 'register'
                 ? 'bg-white dark:bg-gray-900 text-primary-600 dark:text-primary-400 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            {t('nav.register')}
+            {t('nav.register') || 'Boshlash'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('admin'); setError(null); }}
+            className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition flex items-center justify-center gap-1 cursor-pointer ${
+              mode === 'admin'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm shadow-purple-500/30'
+                : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40'
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span>Admin</span>
           </button>
         </div>
 
@@ -161,41 +196,60 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              Gmail / Email manzil
+              {mode === 'admin' ? 'Admin Gmail / Email manzil' : 'Gmail / Email manzil'}
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              {mode === 'admin' ? (
+                <Shield className="absolute left-3 top-2.5 w-4 h-4 text-purple-500" />
+              ) : (
+                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              )}
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="misol@gmail.com"
-                className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#635BFF] outline-none"
+                placeholder={mode === 'admin' ? 'sayfiddinovyusuf773@gmail.com' : 'misol@gmail.com'}
+                className={`w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border rounded-xl outline-none transition ${
+                  mode === 'admin'
+                    ? 'border-purple-200 dark:border-purple-800 focus:ring-2 focus:ring-purple-500'
+                    : 'border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-[#635BFF]'
+                }`}
               />
             </div>
             <p className="mt-1 text-[11px] text-gray-400">
-              {mode === 'login'
-                ? "O'quvchi yoki Admin o'zining Gmail pochtasi va paroli bilan kiradi."
+              {mode === 'admin'
+                ? "Admin hisobingizga biriktirilgan Gmail pochtangizni kiriting."
+                : mode === 'login'
+                ? "Har bir o'quvchi o'zining shaxsiy Gmail pochtasi va paroli bilan kiradi."
                 : "O'quvchilar yangi hisob yaratish uchun o'z Gmail pochtasini kiritadilar."}
             </p>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              Parol
+              {mode === 'admin' ? 'Admin Parol (1234)' : 'Parol'}
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <Lock className={`absolute left-3 top-2.5 w-4 h-4 ${mode === 'admin' ? 'text-purple-500' : 'text-gray-400'}`} />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#635BFF] outline-none"
+                placeholder={mode === 'admin' ? '•••• (1234)' : '••••••••'}
+                className={`w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border rounded-xl outline-none transition ${
+                  mode === 'admin'
+                    ? 'border-purple-200 dark:border-purple-800 focus:ring-2 focus:ring-purple-500'
+                    : 'border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-[#635BFF]'
+                }`}
               />
             </div>
+            {mode === 'admin' && (
+              <p className="mt-1 text-[11px] text-purple-600 dark:text-purple-400 font-medium">
+                Admin paroli: <strong>1234</strong>
+              </p>
+            )}
           </div>
 
           {mode === 'register' && (
@@ -235,16 +289,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white font-medium text-sm rounded-xl shadow-lg shadow-primary-500/25 transition disabled:opacity-50 cursor-pointer"
+            className={`w-full mt-2 py-3 px-4 text-white font-bold text-sm rounded-xl shadow-lg transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 ${
+              mode === 'admin'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-500/25'
+                : 'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 shadow-primary-500/25'
+            }`}
           >
-            {loading ? 'Kutilmoqda...' : mode === 'login' ? 'Kirish' : 'Hisob Yaratish'}
+            {loading ? (
+              'Kutilmoqda...'
+            ) : mode === 'admin' ? (
+              <>
+                <Shield className="w-4 h-4" />
+                <span>Admin Panelga Kirish</span>
+              </>
+            ) : mode === 'login' ? (
+              'Kirish'
+            ) : (
+              'Hisob Yaratish'
+            )}
           </button>
         </form>
 
-        {mode === 'login' && (
-          <div className="mt-4 p-3 bg-purple-50/70 dark:bg-purple-950/30 rounded-2xl border border-purple-100 dark:border-purple-900/40 text-center">
-            <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">
-              🛡️ <strong>Administrator uchun:</strong> Admin pochtangiz va parolingizni kiritib kirsangiz, avtomatik <strong>Admin Panel</strong> ochiladi.
+        {mode === 'admin' && (
+          <div className="mt-4 p-3 bg-purple-50/80 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-900/60 text-center animate-fade-in">
+            <p className="text-xs text-purple-800 dark:text-purple-300 font-medium">
+              🛡️ Faqat LISON platformasi boshqaruvchisi uchun. Kirish bilan to‘g‘ridan-to‘g‘ri <strong>Admin Panel</strong> ochiladi.
             </p>
           </div>
         )}
