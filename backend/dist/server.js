@@ -120,17 +120,23 @@ app.listen(Number(PORT), HOST, () => {
         const hash = await bcryptjs_1.default.hash(adminPass, 10);
         // Update existing super_admin password to '1234'
         await (0, index_1.executeRun)(`UPDATE users SET password_hash = ? WHERE role = 'super_admin' OR id = 'usr-admin-1'`, [hash]);
-        // Also ensure sayfiddinovyusuf773@gmail.com exists and is super_admin with '1234'
-        const adminEmail = (process.env.ADMIN_EMAIL || 'sayfiddinovyusuf773@gmail.com').toLowerCase().trim();
-        const existingAdmin = await (0, index_1.queryOne)(`SELECT id FROM users WHERE email = ?`, [adminEmail]);
-        if (existingAdmin) {
-            await (0, index_1.executeRun)(`UPDATE users SET role = 'super_admin', password_hash = ? WHERE id = ?`, [hash, existingAdmin.id]);
+        // Also ensure Admin accounts exist and are super_admin with '1234'
+        const adminEmails = [
+            (process.env.ADMIN_EMAIL || 'sayfiddinovyusuf773@gmail.com').toLowerCase().trim(),
+            'sayfiddinovyusufff@gmail.com',
+            'sayfiddinovyusuf@gmail.com'
+        ];
+        for (const email of adminEmails) {
+            const existingAdmin = await (0, index_1.queryOne)(`SELECT id FROM users WHERE email = ?`, [email]);
+            if (existingAdmin) {
+                await (0, index_1.executeRun)(`UPDATE users SET role = 'super_admin', password_hash = ? WHERE id = ?`, [hash, existingAdmin.id]);
+            }
+            else {
+                await (0, index_1.executeRun)(`INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level)
+             VALUES (?, ?, ?, 'Admin', 'Yusuf', 'uz', 'C2', 'super_admin', 10000, 50)`, ['usr-admin-' + email.split('@')[0], email, hash]);
+            }
         }
-        else {
-            await (0, index_1.executeRun)(`INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level)
-           VALUES (?, ?, ?, 'Admin', 'Yusuf', 'uz', 'C2', 'super_admin', 10000, 50)`, ['usr-admin-sayfiddin', adminEmail, hash]);
-        }
-        console.log(`🔐 Admin security verified: password '1234' active for ${adminEmail} and admin@ziyo.uz`);
+        console.log(`🔐 Admin security verified: password '1234' active for admin accounts and admin@ziyo.uz`);
     }
     catch (err) {
         console.warn('Admin password initialization notice:', err.message);

@@ -133,22 +133,29 @@ initDatabase()
         [hash]
       );
 
-      // Also ensure sayfiddinovyusuf773@gmail.com exists and is super_admin with '1234'
-      const adminEmail = (process.env.ADMIN_EMAIL || 'sayfiddinovyusuf773@gmail.com').toLowerCase().trim();
-      const existingAdmin = await queryOne(`SELECT id FROM users WHERE email = ?`, [adminEmail]);
-      if (existingAdmin) {
-        await executeRun(
-          `UPDATE users SET role = 'super_admin', password_hash = ? WHERE id = ?`,
-          [hash, existingAdmin.id]
-        );
-      } else {
-        await executeRun(
-          `INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level)
-           VALUES (?, ?, ?, 'Admin', 'Yusuf', 'uz', 'C2', 'super_admin', 10000, 50)`,
-          ['usr-admin-sayfiddin', adminEmail, hash]
-        );
+      // Also ensure Admin accounts exist and are super_admin with '1234'
+      const adminEmails = [
+        (process.env.ADMIN_EMAIL || 'sayfiddinovyusuf773@gmail.com').toLowerCase().trim(),
+        'sayfiddinovyusufff@gmail.com',
+        'sayfiddinovyusuf@gmail.com'
+      ];
+
+      for (const email of adminEmails) {
+        const existingAdmin = await queryOne(`SELECT id FROM users WHERE email = ?`, [email]);
+        if (existingAdmin) {
+          await executeRun(
+            `UPDATE users SET role = 'super_admin', password_hash = ? WHERE id = ?`,
+            [hash, existingAdmin.id]
+          );
+        } else {
+          await executeRun(
+            `INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level)
+             VALUES (?, ?, ?, 'Admin', 'Yusuf', 'uz', 'C2', 'super_admin', 10000, 50)`,
+            ['usr-admin-' + email.split('@')[0], email, hash]
+          );
+        }
       }
-      console.log(`🔐 Admin security verified: password '1234' active for ${adminEmail} and admin@ziyo.uz`);
+      console.log(`🔐 Admin security verified: password '1234' active for admin accounts and admin@ziyo.uz`);
     } catch (err: any) {
       console.warn('Admin password initialization notice:', err.message);
     }
