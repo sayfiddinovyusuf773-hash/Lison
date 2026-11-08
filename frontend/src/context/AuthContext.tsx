@@ -7,6 +7,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; message?: string; user?: User }>;
   register: (data: any) => Promise<{ success: boolean; message?: string; user?: User }>;
+  smartAuth: (data: any) => Promise<{ success: boolean; message?: string; user?: User }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   updateCoins: (coins: number) => void;
@@ -118,6 +119,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const smartAuth = async (formData: any): Promise<{ success: boolean; message?: string; user?: User }> => {
+    try {
+      const cleanData = {
+        ...formData,
+        first_name: (formData.first_name || '').trim(),
+        last_name: (formData.last_name || '').trim(),
+        email: (formData.email || '').trim().toLowerCase(),
+        password: (formData.password || '').trim()
+      };
+      const res = await fetch('/api/auth/smart-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cleanData)
+      });
+      const data = await res.json();
+      if (data.success && data.token) {
+        localStorage.setItem('lison_token', data.token);
+        localStorage.setItem('ziyo_token', data.token);
+        setToken(data.token);
+        setUser(data.user);
+        setIsAuthModalOpen(false);
+        return { success: true, user: data.user, message: data.message };
+      }
+      return { success: false, message: data.message || 'Kirishda xatolik yuz berdi.' };
+    } catch (err: any) {
+      return { success: false, message: 'Server bilan ulanishda xatolik.' };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('lison_token');
     localStorage.removeItem('ziyo_token');
@@ -137,6 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         register,
+        smartAuth,
         logout,
         refreshUser,
         updateCoins,
