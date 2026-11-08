@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { LisonLogo } from './brand/LisonLogo';
-import { X, Mail, Lock, User as UserIcon, ShieldAlert, Shield } from 'lucide-react';
+import { X, Mail, Lock, User as UserIcon, ShieldAlert, Shield, Eye, EyeOff } from 'lucide-react';
 
 interface AuthModalProps {
   navigate?: (path: string) => void;
@@ -15,6 +15,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
   const [mode, setMode] = useState<'login' | 'register' | 'admin'>(authModalMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [preferredLanguage, setPreferredLanguage] = useState('uz');
@@ -209,7 +210,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
               <input
                 type="email"
                 required
-                autoComplete="off"
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                inputMode="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="misol@gmail.com"
@@ -236,18 +241,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
             <div className="relative">
               <Lock className={`absolute left-3 top-3 sm:top-2.5 w-4 h-4 ${mode === 'admin' ? 'text-purple-500' : 'text-gray-400'}`} />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
-                autoComplete="new-password"
+                autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className={`w-full pl-9 pr-3 py-2.5 sm:py-2 text-base sm:text-sm bg-gray-50 dark:bg-gray-800/60 border rounded-xl outline-none transition box-border ${
+                className={`w-full pl-9 pr-10 py-2.5 sm:py-2 text-base sm:text-sm bg-gray-50 dark:bg-gray-800/60 border rounded-xl outline-none transition box-border ${
                   mode === 'admin'
                     ? 'border-purple-200 dark:border-purple-800 focus:ring-2 focus:ring-purple-500'
                     : 'border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-[#635BFF]'
                 }`}
               />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-3 sm:top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                title={showPassword ? "Parolni yashirish" : "Parolni ko'rsatish"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 

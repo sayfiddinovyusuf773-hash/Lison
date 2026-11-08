@@ -69,10 +69,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<{ success: boolean; message?: string; user?: User }> => {
     try {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const cleanPassword = (password || '').trim();
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: cleanEmail, password: cleanPassword })
       });
       const data = await res.json();
       if (data.success && data.token) {
@@ -91,10 +93,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (formData: any): Promise<{ success: boolean; message?: string; user?: User }> => {
     try {
+      const cleanData = {
+        ...formData,
+        email: (formData.email || '').trim().toLowerCase(),
+        password: (formData.password || '').trim()
+      };
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(cleanData)
       });
       const data = await res.json();
       if (data.success && data.token) {

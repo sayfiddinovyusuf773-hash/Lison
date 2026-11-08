@@ -13,21 +13,22 @@ const router = (0, express_1.Router)();
 router.post('/register', async (req, res) => {
     try {
         const { first_name, last_name, email, password, preferred_language, learning_level } = req.body;
-        if (!first_name || !last_name || !email || !password) {
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        const cleanPassword = (password || '').trim();
+        if (!first_name || !last_name || !normalizedEmail || !cleanPassword) {
             res.status(400).json({ success: false, message: 'Barcha maydonlarni to\'liq to\'ldiring.' });
             return;
         }
-        if (password.length < 4) {
+        if (cleanPassword.length < 4) {
             res.status(400).json({ success: false, message: 'Parol kamida 4 ta belgidan iborat bo\'lishi shart.' });
             return;
         }
-        const normalizedEmail = email.trim().toLowerCase();
         const existing = await (0, index_1.queryOne)(`SELECT id FROM users WHERE email = ?`, [normalizedEmail]);
         if (existing) {
             res.status(400).json({ success: false, message: 'Ushbu email manzili allaqachon ro\'yxatdan o\'tgan.' });
             return;
         }
-        const passwordHash = await bcryptjs_1.default.hash(password, 10);
+        const passwordHash = await bcryptjs_1.default.hash(cleanPassword, 10);
         const userId = 'usr-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
         await (0, index_1.executeRun)(`INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level, coins)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 50, 1, 0)`, [userId, normalizedEmail, passwordHash, first_name.trim(), last_name.trim(), preferred_language || 'uz', learning_level || 'A1']);
@@ -66,11 +67,12 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email || !password) {
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        const cleanPassword = (password || '').trim();
+        if (!normalizedEmail || !cleanPassword) {
             res.status(400).json({ success: false, message: 'Email va parolni kiriting.' });
             return;
         }
-        const normalizedEmail = email.trim().toLowerCase();
         const user = await (0, index_1.queryOne)(`SELECT * FROM users WHERE email = ? AND deleted_at IS NULL`, [normalizedEmail]);
         if (!user) {
             res.status(401).json({ success: false, message: 'Email yoki parol noto\'g\'ri.' });
@@ -80,7 +82,7 @@ router.post('/login', async (req, res) => {
             res.status(403).json({ success: false, message: 'Hisobingiz ma\'muriyat tomonidan to\'xtatilgan.' });
             return;
         }
-        const isMatch = await bcryptjs_1.default.compare(password, user.password_hash);
+        const isMatch = await bcryptjs_1.default.compare(cleanPassword, user.password_hash);
         if (!isMatch) {
             res.status(401).json({ success: false, message: 'Email yoki parol noto\'g\'ri.' });
             return;

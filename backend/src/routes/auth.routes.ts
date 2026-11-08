@@ -11,24 +11,26 @@ router.post('/register', async (req: AuthRequest, res: Response): Promise<void> 
   try {
     const { first_name, last_name, email, password, preferred_language, learning_level } = req.body;
 
-    if (!first_name || !last_name || !email || !password) {
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const cleanPassword = (password || '').trim();
+
+    if (!first_name || !last_name || !normalizedEmail || !cleanPassword) {
       res.status(400).json({ success: false, message: 'Barcha maydonlarni to\'liq to\'ldiring.' });
       return;
     }
 
-    if (password.length < 4) {
+    if (cleanPassword.length < 4) {
       res.status(400).json({ success: false, message: 'Parol kamida 4 ta belgidan iborat bo\'lishi shart.' });
       return;
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
     const existing = await queryOne(`SELECT id FROM users WHERE email = ?`, [normalizedEmail]);
     if (existing) {
       res.status(400).json({ success: false, message: 'Ushbu email manzili allaqachon ro\'yxatdan o\'tgan.' });
       return;
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(cleanPassword, 10);
     const userId = 'usr-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
 
     await executeRun(
@@ -83,12 +85,14 @@ router.post('/login', async (req: AuthRequest, res: Response): Promise<void> => 
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const cleanPassword = (password || '').trim();
+
+    if (!normalizedEmail || !cleanPassword) {
       res.status(400).json({ success: false, message: 'Email va parolni kiriting.' });
       return;
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
     const user = await queryOne(`SELECT * FROM users WHERE email = ? AND deleted_at IS NULL`, [normalizedEmail]);
 
     if (!user) {
@@ -101,7 +105,7 @@ router.post('/login', async (req: AuthRequest, res: Response): Promise<void> => 
       return;
     }
 
-    const isMatch = await bcrypt.compare(password, user.password_hash);
+    const isMatch = await bcrypt.compare(cleanPassword, user.password_hash);
     if (!isMatch) {
       res.status(401).json({ success: false, message: 'Email yoki parol noto\'g\'ri.' });
       return;
