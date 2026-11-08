@@ -24,10 +24,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('lison_token') || localStorage.getItem('ziyo_token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'admin'>('login');
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'admin'>('register');
 
-  const openAuthModal = (mode: 'login' | 'register' | 'admin' = 'login') => {
-    setAuthModalMode(mode);
+  const openAuthModal = (mode: 'login' | 'register' | 'admin' = 'register') => {
+    setAuthModalMode(mode === 'admin' ? 'admin' : 'register');
     setIsAuthModalOpen(true);
   };
 

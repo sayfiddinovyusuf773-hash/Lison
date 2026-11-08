@@ -295,21 +295,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               </div>
             )}
 
-            {/* Guest Actions: Boshlash va Admin */}
+            {/* Guest Actions: Faqat Boshlash va Admin (Kirish yo'qotildi) */}
             {!user && (
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={() => openAuthModal('register')}
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-[#635BFF] via-[#7B73FF] to-[#00D4B2] hover:opacity-95 active:scale-95 rounded-xl shadow-md shadow-indigo-500/25 transition-all duration-150 cursor-pointer shrink-0"
-                  title="O'quvchilar uchun boshlash"
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-[#635BFF] via-[#7B73FF] to-[#00D4B2] hover:opacity-95 active:scale-95 rounded-xl shadow-md shadow-indigo-500/25 transition-all duration-150 cursor-pointer"
+                  title="Boshlash"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <Sparkles className="w-3.5 h-3.5" />
                   <span>Boshlash</span>
                 </button>
                 <button
                   onClick={() => openAuthModal('admin')}
-                  className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
-                  title="Administrator uchun kirish"
+                  className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm"
+                  title="Admin sifatida kirish"
                 >
                   <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                   <span>Admin</span>
@@ -394,7 +394,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
       {/* Mobile Drawer (Clean, minimal, 4 items) */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-b border-gray-100 dark:border-gray-800 bg-white/98 dark:bg-gray-950/98 px-4 pt-3 pb-6 space-y-2 animate-fade-in shadow-2xl">
-          {/* Mobile Direct Action Buttons at Top of Drawer */}
+          {/* Mobile Direct Action Buttons: Faqat Boshlash va Admin (Kirish yo'qotildi) */}
           {!user && (
             <div className="grid grid-cols-2 gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
               <button
@@ -404,7 +404,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                 }}
                 className="py-2.5 px-3 text-center text-xs font-extrabold text-white bg-gradient-to-r from-[#635BFF] via-[#7B73FF] to-[#00D4B2] rounded-xl shadow-md shadow-[#635BFF]/25 transition cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <Sparkles className="w-4 h-4 text-amber-300" />
+                <Sparkles className="w-4 h-4" />
                 <span>Boshlash</span>
               </button>
               <button

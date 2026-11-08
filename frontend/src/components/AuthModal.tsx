@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LisonLogo } from './brand/LisonLogo';
 import { X, Mail, Lock, User as UserIcon, ShieldAlert, Shield, Eye, EyeOff, Sparkles, BookOpen, Layers } from 'lucide-react';
@@ -8,7 +8,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
-  const { isAuthModalOpen, closeAuthModal, authModalMode, login, smartAuth } = useAuth();
+  const { isAuthModalOpen, closeAuthModal, authModalMode, smartAuth, login } = useAuth();
 
   const [mode, setMode] = useState<'register' | 'admin'>('register');
   const [firstName, setFirstName] = useState('');
@@ -21,16 +21,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Sync mode when opened from external buttons (e.g. Admin button or Boshlash button)
-  useEffect(() => {
-    if (authModalMode === 'admin') {
-      setMode('admin');
-    } else {
-      setMode('register');
+  // Sync mode with context: only 'admin' or 'register' (Kirish yo'qotildi!)
+  React.useEffect(() => {
+    if (isAuthModalOpen) {
+      setMode(authModalMode === 'admin' ? 'admin' : 'register');
+      setEmail('');
+      setPassword('');
+      setError(null);
     }
-    setEmail('');
-    setPassword('');
-    setError(null);
   }, [authModalMode, isAuthModalOpen]);
 
   if (!isAuthModalOpen) return null;
@@ -56,7 +54,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
 
     try {
       if (mode === 'admin') {
-        // Dedicated Admin Login
+        // Admin Kirishi
         const res = await login(cleanEmail, cleanPassword);
         if (res.success) {
           if (res.user?.role === 'admin' || res.user?.role === 'super_admin') {
@@ -65,10 +63,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
             setError("Ushbu hisobda Administrator huquqi mavjud emas.");
           }
         } else {
-          setError(res.message || "Email yoki parol xato.");
+          setError(res.message || "Admin email yoki parol noto'g'ri.");
         }
       } else {
-        // Smart "Boshlash" for students: handles new registration and cross-device login
+        // O'quvchilar uchun Boshlash (Yangi yoki boshqa telefonda kirish)
         const res = await smartAuth({
           first_name: firstName.trim(),
           last_name: lastName.trim(),
@@ -83,8 +81,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
             if (navigate) navigate('/admin');
           }
         } else {
-          // Xato bo'lsa kirmaydi!
-          setError(res.message || "Kirishda xatolik yuz berdi. Parol yoki ma'lumotlarni tekshiring.");
+          // Xato bo'lsa kirmasin!
+          setError(res.message || "Ma'lumotlar yoki parol noto'g'ri. Qaytadan tekshiring.");
         }
       }
     } catch (err: any) {
@@ -97,7 +95,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto w-full h-full animate-fade-in">
       <div className="relative w-full max-w-[94vw] sm:max-w-md mx-auto my-auto p-5 sm:p-7 bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden box-border">
-        {/* Top Accent line */}
+        {/* Glow decoration */}
         <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 transition-all ${
           mode === 'admin'
             ? 'bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500'
@@ -113,7 +111,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
         </button>
 
         {/* Brand header */}
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 sm:mb-5">
           <div className="flex justify-center mb-2">
             <LisonLogo size="md" showTagline={false} />
           </div>
@@ -132,31 +130,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs sm:max-w-sm mx-auto leading-relaxed">
             {mode === 'admin'
-              ? "Platformani to'liq boshqarish uchun shaxsiy admin hisobingizga kiring"
-              : "Ism, familiya, Gmail va parolingiz bilan kiring. Boshqa telefonda ham shu ma'lumotlar bilan hisobingizga kirasiz."}
+              ? 'Platformani boshqarish uchun shaxsiy admin hisobingizga kiring'
+              : "Ism, familiya, Gmail va parolingiz bilan kiring. Boshqa telefonda ham shu ma'lumotlar bilan hisobingiz ochiladi."}
           </p>
         </div>
 
-        {/* 2-Tab Switcher: Faqat "Boshlash" va "Admin" */}
-        <div className="grid grid-cols-2 p-1 mb-4 bg-gray-100 dark:bg-gray-800/80 rounded-2xl gap-1">
+        {/* 2-Tab Switch: Faqat Boshlash va Admin (Kirish butunlay yo'qotildi!) */}
+        <div className="grid grid-cols-2 p-1 mb-5 bg-gray-100 dark:bg-gray-800 rounded-2xl gap-1">
           <button
             type="button"
             onClick={() => { setMode('register'); setError(null); }}
-            className={`py-2 text-xs sm:text-sm font-extrabold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
               mode === 'register'
-                ? 'bg-white dark:bg-gray-900 text-[#635BFF] dark:text-[#8B7CFF] shadow-sm'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'bg-gradient-to-r from-[#635BFF] to-[#00D4B2] text-white shadow-md'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <Sparkles className="w-3.5 h-3.5" />
             <span>Boshlash</span>
           </button>
           <button
             type="button"
             onClick={() => { setMode('admin'); setError(null); }}
-            className={`py-2 text-xs sm:text-sm font-extrabold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
               mode === 'admin'
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm shadow-purple-500/30'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/30'
                 : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40'
             }`}
           >
@@ -173,7 +171,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
-          {/* Boshlash rejimida Ism va Familiya */}
+          {/* O'quvchilar Boshlash rejimida: Ism va Familiya */}
           {mode === 'register' && (
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -181,7 +179,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
                   Ismingiz <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-3 sm:top-2.5 w-4 h-4 text-gray-400" />
+                  <UserIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     required
@@ -210,13 +208,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
           {/* Gmail / Email */}
           <div>
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-              {mode === 'admin' ? "Admin Gmail pochtasi" : "Gmail / Email pochtangiz"} <span className="text-red-500">*</span>
+              {mode === 'admin' ? 'Admin Gmail / Email' : 'Gmail / Email pochtangiz'} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               {mode === 'admin' ? (
-                <Shield className="absolute left-3 top-3 sm:top-2.5 w-4 h-4 text-purple-500" />
+                <Shield className="absolute left-3 top-2.5 w-4 h-4 text-purple-500" />
               ) : (
-                <Mail className="absolute left-3 top-3 sm:top-2.5 w-4 h-4 text-gray-400" />
+                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               )}
               <input
                 type="email"
@@ -228,7 +226,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
                 inputMode="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={mode === 'admin' ? "admin@ziyo.uz" : "misol@gmail.com"}
+                placeholder="misol@gmail.com"
                 className={`w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border rounded-xl outline-none transition box-border ${
                   mode === 'admin'
                     ? 'border-purple-200 dark:border-purple-800 focus:ring-2 focus:ring-purple-500'
@@ -236,19 +234,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
                 }`}
               />
             </div>
+            <p className="mt-1 text-[11px] text-gray-400">
+              {mode === 'admin'
+                ? "Admin hisobingizga biriktirilgan maxfiy Gmail pochtangizni kiriting."
+                : "Boshqa telefonda kirayotganda ham shu pochtangizni yozasiz."}
+            </p>
           </div>
 
-          {/* Parol with Show/Hide toggle */}
+          {/* Parol with Eye Toggle */}
           <div>
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-              {mode === 'admin' ? "Admin Paroli" : "Parolingiz"} <span className="text-red-500">*</span>
+              {mode === 'admin' ? 'Admin Paroli' : 'Parolingiz'} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
-              <Lock className={`absolute left-3 top-3 sm:top-2.5 w-4 h-4 ${mode === 'admin' ? 'text-purple-500' : 'text-gray-400'}`} />
+              <Lock className={`absolute left-3 top-2.5 w-4 h-4 ${mode === 'admin' ? 'text-purple-500' : 'text-gray-400'}`} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
-                autoComplete="current-password"
+                autoComplete={mode === 'admin' ? 'current-password' : 'current-password'}
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
@@ -265,7 +268,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
                 type="button"
                 tabIndex={-1}
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-3 sm:top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
                 title={showPassword ? "Parolni yashirish" : "Parolni ko'rsatish"}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -273,7 +276,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
             </div>
           </div>
 
-          {/* Boshlang'ich daraja va Qaysi til (Faqat Boshlash rejimida) */}
+          {/* O'quvchilar Boshlash rejimida: Daraja va Til */}
           {mode === 'register' && (
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -322,8 +325,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
             disabled={loading}
             className={`w-full mt-2 py-3 px-4 text-white font-extrabold text-sm rounded-xl shadow-lg transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 ${
               mode === 'admin'
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-500/25 active:scale-95'
-                : 'bg-gradient-to-r from-[#635BFF] via-[#7B73FF] to-[#00D4B2] hover:opacity-95 shadow-indigo-500/25 active:scale-95'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-500/25'
+                : 'bg-gradient-to-r from-[#635BFF] via-[#7B73FF] to-[#00D4B2] hover:opacity-95 shadow-indigo-500/25'
             }`}
           >
             {loading ? (
@@ -343,9 +346,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
         </form>
 
         <p className="text-[11px] text-center text-gray-400 mt-4">
-          {mode === 'admin'
-            ? "Faqat LISON boshqaruvchisi uchun xavfsiz himoyalangan kirish."
-            : "Xavfsiz va tezkor kirish. Barcha natijalaringiz bulutda saqlanadi."}
+          Xavfsiz va tezkor kirish. Barcha natijalaringiz bulutda saqlanadi.
         </p>
       </div>
     </div>
