@@ -154,9 +154,14 @@ router.get('/stats', authenticateToken, async (req: AuthRequest, res: Response):
   }
 });
 
-// Public Leaderboard with XP rankings
+// Public Leaderboard with XP rankings and platform stats
 router.get('/leaderboard', async (_req, res: Response): Promise<void> => {
   try {
+    const totalStudents = await queryOne(`SELECT COUNT(*) as count FROM users WHERE role = 'student' AND deleted_at IS NULL`);
+    const totalCourses = await queryOne(`SELECT COUNT(*) as count FROM courses WHERE is_published = 1 AND deleted_at IS NULL`);
+    const completedLessons = await queryOne(`SELECT COUNT(*) as count FROM lesson_progress WHERE is_completed = 1`);
+    const totalCertificates = await queryOne(`SELECT COUNT(*) as count FROM certificates WHERE is_revoked = 0`);
+
     const topUsers = await queryAll(
       `SELECT id, first_name, last_name, avatar, xp_points, level, preferred_language
        FROM users
@@ -173,7 +178,16 @@ router.get('/leaderboard', async (_req, res: Response): Promise<void> => {
       display_name: `${u.first_name} ${u.last_name ? u.last_name[0] + '.' : ''}`
     }));
 
-    res.json({ success: true, leaderboard: ranked });
+    res.json({
+      success: true,
+      stats: {
+        total_students: totalStudents?.count || 0,
+        total_courses: totalCourses?.count || 0,
+        completed_lessons: completedLessons?.count || 0,
+        total_certificates: totalCertificates?.count || 0
+      },
+      leaderboard: ranked
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Reytingni yuklab bo\'lmadi.' });
   }

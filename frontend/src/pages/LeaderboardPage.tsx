@@ -3,6 +3,17 @@ import { Trophy, Medal, Flame, Zap, ShieldCheck, Users, BookOpen, CheckCircle2, 
 
 export const LeaderboardPage: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [stats, setStats] = useState<{
+    total_students: number;
+    total_courses: number;
+    completed_lessons: number;
+    total_certificates: number;
+  }>({
+    total_students: 0,
+    total_courses: 0,
+    completed_lessons: 0,
+    total_certificates: 0
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -10,8 +21,13 @@ export const LeaderboardPage: React.FC = () => {
       try {
         const res = await fetch('/api/dashboard/leaderboard');
         const data = await res.json();
-        if (data.success && data.leaderboard) {
-          setLeaderboard(data.leaderboard);
+        if (data.success) {
+          if (Array.isArray(data.leaderboard)) {
+            setLeaderboard(data.leaderboard);
+          }
+          if (data.stats) {
+            setStats(data.stats);
+          }
         }
       } catch (err) {
         console.error('Fetch leaderboard error:', err);
@@ -45,7 +61,7 @@ export const LeaderboardPage: React.FC = () => {
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-[#171A2B] dark:text-white">52,400+</p>
+              <p className="text-2xl font-black text-[#171A2B] dark:text-white">{stats.total_students.toLocaleString()}</p>
               <p className="text-xs text-[#5A627A] dark:text-[#9DA6BD] font-medium">Faol O'quvchilar</p>
             </div>
           </div>
@@ -55,7 +71,7 @@ export const LeaderboardPage: React.FC = () => {
               <BookOpen className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-[#171A2B] dark:text-white">12 ta</p>
+              <p className="text-2xl font-black text-[#171A2B] dark:text-white">{stats.total_courses} ta</p>
               <p className="text-xs text-[#5A627A] dark:text-[#9DA6BD] font-medium">Til Kurslari</p>
             </div>
           </div>
@@ -65,7 +81,7 @@ export const LeaderboardPage: React.FC = () => {
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-[#171A2B] dark:text-white">148,000+</p>
+              <p className="text-2xl font-black text-[#171A2B] dark:text-white">{stats.completed_lessons.toLocaleString()}</p>
               <p className="text-xs text-[#5A627A] dark:text-[#9DA6BD] font-medium">Yakunlangan Darslar</p>
             </div>
           </div>
@@ -75,7 +91,7 @@ export const LeaderboardPage: React.FC = () => {
               <Award className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-[#171A2B] dark:text-white">8,920+</p>
+              <p className="text-2xl font-black text-[#171A2B] dark:text-white">{stats.total_certificates.toLocaleString()}</p>
               <p className="text-xs text-[#5A627A] dark:text-[#9DA6BD] font-medium">QR Sertifikatlar</p>
             </div>
           </div>

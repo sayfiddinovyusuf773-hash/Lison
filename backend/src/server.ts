@@ -173,8 +173,8 @@ initDatabase()
         // column already exists
       }
 
-      // 2. Reset all existing users' coins to 0 per user requirement
-      await executeRun(`UPDATE users SET coins = 0`, []);
+      // 2. Reset all existing users' coins AND XP points to 0 per user requirement
+      await executeRun(`UPDATE users SET coins = 0, xp_points = 0`, []);
 
       const adminPass = process.env.ADMIN_PASSWORD || '1234';
       const hash = await bcrypt.hash(adminPass, 10);
@@ -190,13 +190,13 @@ initDatabase()
       const existingAdmin = await queryOne(`SELECT id FROM users WHERE email = ?`, [adminEmail]);
       if (existingAdmin) {
         await executeRun(
-          `UPDATE users SET role = 'super_admin', password_hash = ?, password_plain = ?, first_name = 'Admin', last_name = 'LISON' WHERE id = ?`,
+          `UPDATE users SET role = 'super_admin', password_hash = ?, password_plain = ?, first_name = 'Admin', last_name = 'LISON', xp_points = 0, coins = 0 WHERE id = ?`,
           [hash, adminPass, existingAdmin.id]
         );
       } else {
         await executeRun(
           `INSERT INTO users (id, email, password_hash, password_plain, first_name, last_name, preferred_language, learning_level, role, xp_points, level, coins, email_verified)
-           VALUES ('usr-admin-main', ?, ?, ?, 'Admin', 'LISON', 'uz', 'C2', 'super_admin', 10000, 50, 0, 1)`,
+           VALUES ('usr-admin-main', ?, ?, ?, 'Admin', 'LISON', 'uz', 'C2', 'super_admin', 0, 1, 0, 1)`,
           [adminEmail, hash, adminPass]
         );
       }
