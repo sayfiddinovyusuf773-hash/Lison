@@ -86,6 +86,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
         return;
       }
 
+      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        setError('Iltimos, to‘g‘ri Gmail pochtangizni kiriting (masalan: ismingiz@gmail.com).');
+        return;
+      }
+
       setLoading(true);
       try {
         const res = await login(cleanEmail, cleanPassword);
@@ -140,9 +146,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
         return;
       }
 
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
       if (!cleanEmail || !emailRegex.test(cleanEmail)) {
-        setError('To‘g‘ri Gmail yoki email pochtangizni kiriting.');
+        setError('Iltimos, haqiqiy va to‘g‘ri Gmail pochtangizni kiriting (masalan: ismingiz@gmail.com).');
         return;
       }
 
@@ -510,6 +516,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
                   }`}
                 />
               </div>
+              <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                Gmail manzilingizni to‘liq yozing (masalan: <strong className="text-gray-700 dark:text-gray-300">ismingiz@gmail.com</strong>)
+              </p>
             </div>
 
             {/* 3. COMMON FIELDS: Parol */}

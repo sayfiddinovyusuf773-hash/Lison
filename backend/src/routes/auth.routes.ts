@@ -13,7 +13,17 @@ const hashCode = (code: string): string => {
 };
 
 const isValidEmailFormat = (email: string): boolean => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!email || typeof email !== 'string') return false;
+  const clean = email.trim().toLowerCase();
+  const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  if (!regex.test(clean)) return false;
+  const parts = clean.split('@');
+  if (parts.length !== 2) return false;
+  const domain = parts[1];
+  if (!domain.includes('.')) return false;
+  const tld = domain.split('.').pop();
+  if (!tld || tld.length < 2) return false;
+  return true;
 };
 
 const setSessionCookie = (res: Response, token: string): void => {
@@ -35,6 +45,11 @@ router.post('/smart-auth', async (req: AuthRequest, res: Response): Promise<void
 
     if (!normalizedEmail || !cleanPassword) {
       res.status(400).json({ success: false, message: 'Gmail va parolingizni kiriting.' });
+      return;
+    }
+
+    if (!isValidEmailFormat(normalizedEmail)) {
+      res.status(400).json({ success: false, message: 'Iltimos, to\'g\'ri Gmail pochtangizni kiriting (masalan: ismingiz@gmail.com).' });
       return;
     }
 
@@ -198,7 +213,7 @@ router.post('/register', async (req: AuthRequest, res: Response): Promise<void> 
     }
 
     if (!normalizedEmail || !isValidEmailFormat(normalizedEmail)) {
-      res.status(400).json({ success: false, message: 'To\'g\'ri Gmail yoki email pochtangizni kiriting.' });
+      res.status(400).json({ success: false, message: 'Iltimos, haqiqiy va to\'g\'ri Gmail pochtangizni kiriting (masalan: ismingiz@gmail.com).' });
       return;
     }
 
@@ -287,6 +302,11 @@ router.post('/login', async (req: AuthRequest, res: Response): Promise<void> => 
 
     if (!normalizedEmail || !cleanPassword) {
       res.status(400).json({ success: false, message: 'Gmail va parolingizni kiriting.' });
+      return;
+    }
+
+    if (!isValidEmailFormat(normalizedEmail)) {
+      res.status(400).json({ success: false, message: 'Iltimos, to\'g\'ri Gmail pochtangizni kiriting (masalan: ismingiz@gmail.com).' });
       return;
     }
 

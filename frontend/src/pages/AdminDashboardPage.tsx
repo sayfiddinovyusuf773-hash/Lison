@@ -31,7 +31,9 @@ import {
   AlertCircle,
   Video,
   Play,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Key
 } from 'lucide-react';
 
 interface AdminDashboardPageProps {
@@ -1105,7 +1107,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-800 text-gray-400 font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Foydalanuvchi</th>
-                    <th className="py-3 px-4">Email</th>
+                    <th className="py-3 px-4">Yosh</th>
+                    <th className="py-3 px-4">Gmail / Pochta</th>
                     <th className="py-3 px-4">Parol (Admin ko‘rinishi)</th>
                     <th className="py-3 px-4">Rol</th>
                     <th className="py-3 px-4">Tangalar</th>
@@ -1118,13 +1121,54 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                   {usersList.map((u) => (
                     <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="py-3 px-4 font-bold text-gray-900 dark:text-white">
-                        {u.first_name} {u.last_name}
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs uppercase">
+                            {u.first_name ? u.first_name[0] : 'U'}
+                          </div>
+                          <span>{u.first_name} {u.last_name}</span>
+                        </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-500 font-mono text-[11px]">{u.email}</td>
+                      <td className="py-3 px-4 font-semibold text-gray-600 dark:text-gray-300">
+                        {u.age ? `${u.age} yosh` : '—'}
+                      </td>
                       <td className="py-3 px-4">
-                        <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-purple-600 dark:text-purple-400 font-bold select-all">
-                          {u.password_plain || '••••••••'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-gray-700 dark:text-gray-200 font-mono text-[11px] font-semibold select-all">
+                            {u.email}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(u.email);
+                              alert(`Gmail nusxalandi: ${u.email}`);
+                            }}
+                            title="Gmail pochtani nusxalash"
+                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-indigo-600 transition cursor-pointer"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 font-extrabold border border-purple-200 dark:border-purple-800/80 select-all tracking-wider shadow-sm flex items-center gap-1">
+                            <Key className="w-3 h-3 text-purple-500" />
+                            <span>{u.password_plain || '••••••••'}</span>
+                          </span>
+                          {u.password_plain && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(u.password_plain);
+                                alert(`Parol nusxalandi: ${u.password_plain}`);
+                              }}
+                              title="Parolni nusxalash"
+                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-purple-600 transition cursor-pointer"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4">
                         <select
