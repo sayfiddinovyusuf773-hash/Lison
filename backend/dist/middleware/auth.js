@@ -9,7 +9,7 @@ const index_1 = require("../db/index");
 exports.JWT_SECRET = process.env.JWT_SECRET || 'ziyo_academy_super_secret_jwt_key_2026';
 const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = (authHeader && authHeader.split(' ')[1]) || req.cookies?.['lison_session'];
     if (!token) {
         res.status(401).json({ success: false, message: 'Authentication required. No token provided.' });
         return;
@@ -37,7 +37,7 @@ const authenticateToken = async (req, res, next) => {
 exports.authenticateToken = authenticateToken;
 const optionalAuth = async (req, _res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = (authHeader && authHeader.split(' ')[1]) || req.cookies?.['lison_session'];
     if (token) {
         try {
             const decoded = jsonwebtoken_1.default.verify(token, exports.JWT_SECRET);

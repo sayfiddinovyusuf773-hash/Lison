@@ -284,24 +284,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               </div>
             )}
 
-            {/* Guest Actions: Faqat Boshlash va Admin (Kirish yo'qotildi) */}
+            {/* Guest Actions: Kirish va Ro'yxatdan o'tish (Admin public tugmasi olib tashlandi) */}
             {!user && (
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
-                  onClick={() => openAuthModal('register')}
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-[#635BFF] via-[#7B73FF] to-[#00D4B2] hover:opacity-95 active:scale-95 rounded-xl shadow-md shadow-indigo-500/25 transition-all duration-150 cursor-pointer"
-                  title="Boshlash"
+                  onClick={() => openAuthModal('login')}
+                  className="flex items-center gap-1 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-[#635BFF] dark:hover:text-[#8B7CFF] bg-[#F7F8FC] dark:bg-[#12182B] hover:bg-gray-100 dark:hover:bg-[#1A223B] border border-[#E6E8F0] dark:border-[#1F2840] rounded-xl transition-all cursor-pointer shadow-sm"
+                  title="Tizimga kirish"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Boshlash</span>
+                  <LogIn className="w-3.5 h-3.5 text-[#635BFF]" />
+                  <span>Kirish</span>
                 </button>
                 <button
-                  onClick={() => openAuthModal('admin')}
-                  className="hidden sm:flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm"
-                  title="Admin sifatida kirish"
+                  onClick={() => openAuthModal('register')}
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-[#635BFF] via-[#7B73FF] to-[#00D4B2] hover:opacity-95 active:scale-95 rounded-xl shadow-md shadow-indigo-500/25 transition-all duration-150 cursor-pointer"
+                  title="Ro'yxatdan o'tish"
                 >
-                  <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                  <span>Admin</span>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Ro'yxatdan o'tish</span>
                 </button>
               </div>
             )}
@@ -389,9 +389,19 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
       {/* Mobile Drawer (Clean, minimal, 4 items) */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-b border-gray-100 dark:border-gray-800 bg-white/98 dark:bg-gray-950/98 px-4 pt-3 pb-6 space-y-2 animate-fade-in shadow-2xl">
-          {/* Mobile Direct Action Buttons: Faqat Boshlash va Admin (Kirish yo'qotildi) */}
+          {/* Mobile Direct Action Buttons: Kirish va Ro'yxatdan o'tish */}
           {!user && (
             <div className="grid grid-cols-2 gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  openAuthModal('login');
+                }}
+                className="py-2.5 px-3 text-center text-xs font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <LogIn className="w-4 h-4 text-[#635BFF]" />
+                <span>Kirish</span>
+              </button>
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
@@ -400,17 +410,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                 className="py-2.5 px-3 text-center text-xs font-extrabold text-white bg-gradient-to-r from-[#635BFF] via-[#7B73FF] to-[#00D4B2] rounded-xl shadow-md shadow-[#635BFF]/25 transition cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Boshlash</span>
-              </button>
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  openAuthModal('admin');
-                }}
-                className="py-2.5 px-3 text-center text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <Shield className="w-4 h-4" />
-                <span>Admin</span>
+                <span>Ro'yxatdan o'tish</span>
               </button>
             </div>
           )}

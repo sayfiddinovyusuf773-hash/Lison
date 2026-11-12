@@ -71,6 +71,7 @@ const initDatabase = async () => {
       password_plain TEXT, -- For admin reference dashboard
       first_name TEXT NOT NULL,
       last_name TEXT NOT NULL,
+      age INTEGER,
       avatar TEXT,
       preferred_language TEXT DEFAULT 'uz',
       learning_level TEXT DEFAULT 'A1',

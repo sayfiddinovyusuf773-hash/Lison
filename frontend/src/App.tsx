@@ -23,6 +23,7 @@ const TeachersPage = lazy(() => import('./pages/TeachersPage').then(m => ({ defa
 const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
 const VerifyCertificatePage = lazy(() => import('./pages/VerifyCertificatePage').then(m => ({ default: m.VerifyCertificatePage })));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
+const SecureAdminAccessPage = lazy(() => import('./pages/SecureAdminAccessPage').then(m => ({ default: m.SecureAdminAccessPage })));
 
 const PageLoadingFallback: React.FC = () => (
   <div className="min-h-[50vh] flex flex-col items-center justify-center p-8 space-y-3">
@@ -128,6 +129,9 @@ export const AppContent: React.FC = () => {
         return <AboutPage />;
       case '/admin':
         return <AdminDashboardPage navigate={navigate} />;
+      case '/secure-admin-access':
+      case '/admin-login':
+        return <SecureAdminAccessPage navigate={navigate} />;
       case '/':
         return <HomePage navigate={navigate} />;
       default:

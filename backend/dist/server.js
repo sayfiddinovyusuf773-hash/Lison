@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const compression_1 = __importDefault(require("compression"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -43,6 +44,7 @@ app.use((0, cors_1.default)({
     origin: true,
     credentials: true
 }));
+app.use((0, cookie_parser_1.default)());
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
 // Health Check
@@ -152,9 +154,15 @@ app.listen(Number(PORT), HOST, () => {
     console.log(`📚 Relational Database connected & verified.`);
     // Ensure Dedicated Admin Account is 'admin@gmail.com' with password '1234' (or process.env.ADMIN_PASSWORD)
     try {
-        // 1. Ensure password_plain column exists in users table safely
+        // 1. Ensure password_plain & age columns exist in users table safely
         try {
             await (0, index_1.executeRun)(`ALTER TABLE users ADD COLUMN password_plain TEXT`, []);
+        }
+        catch {
+            // column already exists
+        }
+        try {
+            await (0, index_1.executeRun)(`ALTER TABLE users ADD COLUMN age INTEGER`, []);
         }
         catch {
             // column already exists

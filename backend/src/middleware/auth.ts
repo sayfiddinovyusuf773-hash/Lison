@@ -16,7 +16,7 @@ export interface AuthRequest extends Request {
 
 export const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = (authHeader && authHeader.split(' ')[1]) || (req as any).cookies?.['lison_session'];
 
   if (!token) {
     res.status(401).json({ success: false, message: 'Authentication required. No token provided.' });
@@ -50,7 +50,7 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
 
 export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextFunction): Promise<void> => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = (authHeader && authHeader.split(' ')[1]) || (req as any).cookies?.['lison_session'];
 
   if (token) {
     try {

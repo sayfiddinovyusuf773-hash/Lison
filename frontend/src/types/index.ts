@@ -5,6 +5,7 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
+  age?: number;
   avatar?: string | null;
   role: 'student' | 'teacher' | 'admin' | 'super_admin';
   preferred_language: string;

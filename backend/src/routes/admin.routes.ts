@@ -65,7 +65,7 @@ router.get('/overview', async (_req, res: Response): Promise<void> => {
 router.get('/users', async (req, res: Response): Promise<void> => {
   try {
     const { search, role, status } = req.query;
-    let sql = `SELECT id, email, password_plain, first_name, last_name, role, xp_points, level, coins, is_active, is_suspended, created_at FROM users WHERE deleted_at IS NULL`;
+    let sql = `SELECT id, email, password_plain, first_name, last_name, age, role, xp_points, level, coins, is_active, is_suspended, created_at FROM users WHERE deleted_at IS NULL`;
     const params: any[] = [];
 
     if (search) {

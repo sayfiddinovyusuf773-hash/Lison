@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -46,6 +47,7 @@ app.use(cors({
   credentials: true
 }));
 
+app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -166,9 +168,14 @@ initDatabase()
     console.log(`📚 Relational Database connected & verified.`);
     // Ensure Dedicated Admin Account is 'admin@gmail.com' with password '1234' (or process.env.ADMIN_PASSWORD)
     try {
-      // 1. Ensure password_plain column exists in users table safely
+      // 1. Ensure password_plain & age columns exist in users table safely
       try {
         await executeRun(`ALTER TABLE users ADD COLUMN password_plain TEXT`, []);
+      } catch {
+        // column already exists
+      }
+      try {
+        await executeRun(`ALTER TABLE users ADD COLUMN age INTEGER`, []);
       } catch {
         // column already exists
       }

@@ -5,9 +5,9 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, pass: string) => Promise<{ success: boolean; message?: string; user?: User }>;
-  register: (data: any) => Promise<{ success: boolean; message?: string; user?: User }>;
-  smartAuth: (data: any) => Promise<{ success: boolean; message?: string; user?: User }>;
+  login: (email: string, pass: string) => Promise<{ success: boolean; message?: string; user?: User; redirect_url?: string }>;
+  register: (data: any) => Promise<{ success: boolean; message?: string; user?: User; redirect_url?: string }>;
+  smartAuth: (data: any) => Promise<{ success: boolean; message?: string; user?: User; redirect_url?: string }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   updateCoins: (coins: number) => void;
@@ -26,11 +26,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('lison_token') || localStorage.getItem('ziyo_token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'admin'>('register');
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'admin'>('login');
   const [redirectAfterLogin, setRedirectAfterLogin] = useState<string | null>(null);
 
-  const openAuthModal = (mode: 'login' | 'register' | 'admin' = 'register', redirectTo?: string) => {
-    setAuthModalMode(mode === 'admin' ? 'admin' : 'register');
+  const openAuthModal = (mode: 'login' | 'register' | 'admin' = 'login', redirectTo?: string) => {
+    setAuthModalMode(mode);
     if (redirectTo) {
       setRedirectAfterLogin(redirectTo);
     }
@@ -41,15 +41,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshUser = async () => {
     const savedToken = localStorage.getItem('lison_token') || localStorage.getItem('ziyo_token');
-    if (!savedToken) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
 
     try {
+      const headers: Record<string, string> = {};
+      if (savedToken) {
+        headers['Authorization'] = `Bearer ${savedToken}`;
+      }
       const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${savedToken}` }
+        headers,
+        credentials: 'include'
       });
       const data = await res.json();
       if (data.success && data.user) {
@@ -74,13 +74,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUser();
   }, [token]);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; message?: string; user?: User }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; message?: string; user?: User; redirect_url?: string }> => {
     try {
       const cleanEmail = (email || '').trim().toLowerCase();
       const cleanPassword = (password || '').trim();
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email: cleanEmail, password: cleanPassword })
       });
       const data = await res.json();
@@ -90,24 +91,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(data.token);
         setUser(data.user);
         setIsAuthModalOpen(false);
-        return { success: true, user: data.user };
+        return { success: true, user: data.user, redirect_url: data.redirect_url, message: data.message };
       }
-      return { success: false, message: data.message || 'Kirishda xatolik.' };
+      return { success: false, message: data.message || 'Kirishda xatolik yuz berdi.' };
     } catch (err: any) {
       return { success: false, message: 'Server bilan ulanishda xatolik.' };
     }
   };
 
-  const register = async (formData: any): Promise<{ success: boolean; message?: string; user?: User }> => {
+  const register = async (formData: any): Promise<{ success: boolean; message?: string; user?: User; redirect_url?: string }> => {
     try {
       const cleanData = {
         ...formData,
         email: (formData.email || '').trim().toLowerCase(),
-        password: (formData.password || '').trim()
+        password: (formData.password || '').trim(),
+        confirm_password: (formData.confirm_password || '').trim()
       };
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(cleanData)
       });
       const data = await res.json();
@@ -117,15 +120,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(data.token);
         setUser(data.user);
         setIsAuthModalOpen(false);
-        return { success: true, user: data.user };
+        return { success: true, user: data.user, redirect_url: data.redirect_url, message: data.message };
       }
-      return { success: false, message: data.message || 'Ro\'yxatdan o\'tishda xatolik.' };
+      return { success: false, message: data.message || 'Ro\'yxatdan o\'tishda xatolik yuz berdi.' };
     } catch (err: any) {
       return { success: false, message: 'Server bilan ulanishda xatolik.' };
     }
   };
 
-  const smartAuth = async (formData: any): Promise<{ success: boolean; message?: string; user?: User }> => {
+  const smartAuth = async (formData: any): Promise<{ success: boolean; message?: string; user?: User; redirect_url?: string }> => {
     try {
       const cleanData = {
         ...formData,
@@ -137,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await fetch('/api/auth/smart-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(cleanData)
       });
       const data = await res.json();
@@ -154,7 +158,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      // ignore
+    }
     localStorage.removeItem('lison_token');
     localStorage.removeItem('ziyo_token');
     setToken(null);
