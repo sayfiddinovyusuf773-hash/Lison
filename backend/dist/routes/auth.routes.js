@@ -78,7 +78,12 @@ router.post('/smart-auth', async (req, res) => {
         await (0, index_1.executeRun)(`INSERT INTO learning_streaks (user_id, current_streak, longest_streak) VALUES (?, 1, 1)`, [userId]);
         // Initial notification
         await (0, index_1.executeRun)(`INSERT INTO notifications (id, user_id, title, message, type, link_url)
-       VALUES (?, ?, 'Xush kelibsiz!', 'LISON platformasiga muvaffaqiyatli a\'zo bo\'ldingiz. +50 bonus XP berildi!', 'system', '/courses')`, ['notif-' + Date.now(), userId]);
+       VALUES (?, ?, ?, ?, 'system', '/courses')`, [
+            'notif-' + Date.now(),
+            userId,
+            'Xush kelibsiz!',
+            "LISON platformasiga muvaffaqiyatli a'zo bo'ldingiz. +50 bonus XP berildi!"
+        ]);
         await (0, auth_1.logAudit)(userId, 'REGISTER', 'USERS', `New student registration: ${normalizedEmail}`, req.ip);
         const token = jsonwebtoken_1.default.sign({ id: userId, email: normalizedEmail, role: 'student' }, auth_1.JWT_SECRET, { expiresIn: '7d' });
         res.status(201).json({
@@ -132,7 +137,12 @@ router.post('/register', async (req, res) => {
         await (0, index_1.executeRun)(`INSERT INTO learning_streaks (user_id, current_streak, longest_streak) VALUES (?, 1, 1)`, [userId]);
         // Initial notification
         await (0, index_1.executeRun)(`INSERT INTO notifications (id, user_id, title, message, type, link_url)
-       VALUES (?, ?, 'Xush kelibsiz!', 'LISON platformasiga muvaffaqiyatli a\'zo bo\'ldingiz. +50 bonus XP berildi!', 'system', '/courses')`, ['notif-' + Date.now(), userId]);
+       VALUES (?, ?, ?, ?, 'system', '/courses')`, [
+            'notif-' + Date.now(),
+            userId,
+            'Xush kelibsiz!',
+            "LISON platformasiga muvaffaqiyatli a'zo bo'ldingiz. +50 bonus XP berildi!"
+        ]);
         await (0, auth_1.logAudit)(userId, 'REGISTER', 'USERS', `New student registration: ${normalizedEmail}`, req.ip);
         const token = jsonwebtoken_1.default.sign({ id: userId, email: normalizedEmail, role: 'student' }, auth_1.JWT_SECRET, { expiresIn: '7d' });
         res.status(201).json({

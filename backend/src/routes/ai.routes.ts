@@ -129,8 +129,11 @@ router.post('/chat', authenticateToken, async (req: AuthRequest, res: Response):
     const geminiApiKey = process.env.GEMINI_API_KEY;
     let aiReplyText = '';
     let correctionsObj: any = null;
+    let aiMode: 'gemini' | 'offline_fallback' = 'offline_fallback';
 
     if (geminiApiKey) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       try {
         const systemPrompt = `You are LISON's Master AI Language Teacher. You teach ${target_language || 'English'} to an Uzbek student at level ${learning_level || 'A1'}.
 Explain concepts respectfully, encouragingly, and clearly. If requested or for complex grammar points, clarify in Uzbek language. Provide natural examples and respectful feedback.`;
@@ -138,6 +141,7 @@ Explain concepts respectfully, encouragingly, and clearly. If requested or for c
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             contents: [
               { role: 'user', parts: [{ text: `${systemPrompt}\n\nStudent message: ${message}` }] }
@@ -148,9 +152,14 @@ Explain concepts respectfully, encouragingly, and clearly. If requested or for c
         if (response.ok) {
           const data: any = await response.json();
           aiReplyText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (aiReplyText) {
+            aiMode = 'gemini';
+          }
         }
       } catch (geminiErr) {
-        console.warn('Gemini API call failed, falling back to local tutor:', geminiErr);
+        console.warn('Gemini API call failed or timed out, falling back to local tutor:', geminiErr);
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
@@ -173,6 +182,8 @@ Explain concepts respectfully, encouragingly, and clearly. If requested or for c
     res.json({
       success: true,
       conversation_id: convId,
+      ai_mode: aiMode,
+      gemini_configured: Boolean(geminiApiKey),
       message: {
         id: aiMsgId,
         role: 'assistant',
@@ -185,6 +196,14 @@ Explain concepts respectfully, encouragingly, and clearly. If requested or for c
     console.error('AI chat error:', err);
     res.status(500).json({ success: false, message: 'AI xizmati bilan bog\'lanishda xatolik yuz berdi.' });
   }
+});
+
+// AI service configuration status
+router.get('/status', (_req: AuthRequest, res: Response): void => {
+  res.json({
+    success: true,
+    gemini_configured: Boolean(process.env.GEMINI_API_KEY)
+  });
 });
 
 // Get user conversation history

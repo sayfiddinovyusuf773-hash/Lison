@@ -69,16 +69,56 @@ router.get('/stats', authenticateToken, async (req: AuthRequest, res: Response):
       [userId]
     );
 
-    // Weekly activity mock/aggregated
-    const weeklyActivity = [
-      { day: 'Dush', minutes: 25, active: true },
-      { day: 'Sesh', minutes: 35, active: true },
-      { day: 'Chor', minutes: 20, active: true },
-      { day: 'Pay', minutes: 40, active: true },
-      { day: 'Juma', minutes: 30, active: true },
-      { day: 'Shan', minutes: 15, active: false },
-      { day: 'Yak', minutes: 0, active: false }
-    ];
+    // Real weekly activity aggregated from lesson_progress, quiz_attempts, and speaking_sessions
+    const dayLabels = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Juma', 'Shan'];
+    const activityMap = new Map<string, number>();
+
+    const lessonRows = await queryAll(
+      `SELECT DATE(updated_at) as d, COUNT(*) as cnt
+       FROM lesson_progress
+       WHERE user_id = ? AND updated_at >= DATE('now', '-6 days')
+       GROUP BY DATE(updated_at)`,
+      [userId]
+    );
+    for (const r of lessonRows) {
+      if (r.d) activityMap.set(r.d, (activityMap.get(r.d) || 0) + Number(r.cnt || 0) * 15);
+    }
+
+    const quizRows = await queryAll(
+      `SELECT DATE(attempted_at) as d, COUNT(*) as cnt
+       FROM quiz_attempts
+       WHERE user_id = ? AND attempted_at >= DATE('now', '-6 days')
+       GROUP BY DATE(attempted_at)`,
+      [userId]
+    );
+    for (const r of quizRows) {
+      if (r.d) activityMap.set(r.d, (activityMap.get(r.d) || 0) + Number(r.cnt || 0) * 10);
+    }
+
+    const speakingRows = await queryAll(
+      `SELECT DATE(created_at) as d, COUNT(*) as cnt
+       FROM speaking_sessions
+       WHERE user_id = ? AND created_at >= DATE('now', '-6 days')
+       GROUP BY DATE(created_at)`,
+      [userId]
+    );
+    for (const r of speakingRows) {
+      if (r.d) activityMap.set(r.d, (activityMap.get(r.d) || 0) + Number(r.cnt || 0) * 8);
+    }
+
+    const weeklyActivity = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - i);
+      const isoDate = d.toISOString().slice(0, 10);
+      const minutes = activityMap.get(isoDate) || 0;
+      weeklyActivity.push({
+        day: dayLabels[d.getUTCDay()],
+        date: isoDate,
+        minutes,
+        active: minutes > 0
+      });
+    }
 
     // Recommended courses (courses the student is not yet enrolled in)
     const enrolledIds = enrolledCourses.map((c: any) => `'${c.course_id}'`).join(',') || "''";

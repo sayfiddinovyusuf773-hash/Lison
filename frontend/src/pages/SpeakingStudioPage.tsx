@@ -30,6 +30,7 @@ export const SpeakingStudioPage: React.FC = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<SpeakingResult | null>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [micError, setMicError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -93,10 +94,11 @@ export const SpeakingStudioPage: React.FC = () => {
 
   const startRecording = async () => {
     if (!user) {
-      openAuthModal('login');
+      openAuthModal('register', '/speaking');
       return;
     }
 
+    setMicError(null);
     setTranscript('');
     setResult(null);
     setAudioUrl(null);
@@ -130,8 +132,12 @@ export const SpeakingStudioPage: React.FC = () => {
           // ignore if already started
         }
       }
-    } catch (err) {
-      alert("Mikrofon ruxsati berilmadi yoki qurilma topilmadi. Iltimos, mikrofonga ruxsat bering.");
+    } catch (err: any) {
+      setMicError(
+        err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError'
+          ? "Mikrofon ruxsati rad etildi. Brauzer manzili yonidagi qulf/mikrofon belgisini bosib ruxsat bering va sahifani yangilang."
+          : "Mikrofon qurilmasi topilmadi yoki ulanib bo'lmadi. Iltimos, mikrofon ulanganini tekshiring."
+      );
     }
   };
 
@@ -151,9 +157,10 @@ export const SpeakingStudioPage: React.FC = () => {
 
   const handleAnalyze = async () => {
     if (!transcript.trim()) {
-      alert("Avval mikrofonga gapiring yoki yozuvni to'xtating.");
+      setMicError("Avval mikrofonga gapiring yoki matn maydoniga nutqingizni yozing.");
       return;
     }
+    setMicError(null);
 
     setAnalyzing(true);
     try {
@@ -181,8 +188,18 @@ export const SpeakingStudioPage: React.FC = () => {
             origin: { y: 0.6 }
           });
         }
-        // Refresh history
+        // Refresh history from server
         setHistory((prev) => [data.result, ...prev]);
+        fetch('/api/speaking/history', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+          .then((r) => r.json())
+          .then((histData) => {
+            if (histData.success && Array.isArray(histData.history)) {
+              setHistory(histData.history);
+            }
+          })
+          .catch(() => {});
       }
     } catch (err) {
       console.error('Speaking analysis error:', err);
@@ -252,6 +269,15 @@ export const SpeakingStudioPage: React.FC = () => {
 
           {/* Right: Studio Workspace */}
           <div className="lg:col-span-8 space-y-6">
+            {micError && (
+              <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-3">
+                <MicOff className="w-5 h-5 shrink-0 text-rose-500 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold">Mikrofon / Yozuv xatoligi</p>
+                  <p>{micError}</p>
+                </div>
+              </div>
+            )}
             {selectedTopic && (
               <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 sm:p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6">
                 {/* Topic Prompt Card */}

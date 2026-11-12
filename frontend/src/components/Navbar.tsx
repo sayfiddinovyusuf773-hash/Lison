@@ -153,10 +153,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             })}
           </nav>
 
-          {/* Right: Language Selector, Theme Toggle & Kirish / Profil */}
+          {/* Right: Language Selector, Theme Toggle & Boshlash / Profil */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* Language Switcher: UZ / EN / RU */}
-            <div className="relative" ref={langRef}>
+            {/* Language Switcher: UZ / EN / RU / KO / AR (hidden on <sm to prevent mobile crowding; available in mobile drawer) */}
+            <div className="relative hidden sm:block" ref={langRef}>
               <button
                 onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
                 className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-bold text-[#171A2B] dark:text-[#F7F8FC] bg-[#F7F8FC] dark:bg-[#12182B] hover:bg-gray-100 dark:hover:bg-[#1A223B] rounded-lg border border-[#E6E8F0] dark:border-[#1F2840] transition cursor-pointer"
@@ -167,46 +167,35 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               </button>
 
               {isLangDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-[#12182B] rounded-xl shadow-lg border border-[#E6E8F0] dark:border-[#1F2840] py-1 z-50 animate-fade-in">
-                  <button
-                    onClick={() => { setLanguage('uz'); setIsLangDropdownOpen(false); }}
-                    className={`w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium cursor-pointer ${
-                      language === 'uz'
-                        ? 'text-[#635BFF] bg-[#635BFF]/10 font-bold'
-                        : 'text-[#171A2B] dark:text-[#9DA6BD] hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    <span>O'zbek (UZ)</span>
-                  </button>
-                  <button
-                    onClick={() => { setLanguage('en'); setIsLangDropdownOpen(false); }}
-                    className={`w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium cursor-pointer ${
-                      language === 'en'
-                        ? 'text-[#635BFF] bg-[#635BFF]/10 font-bold'
-                        : 'text-[#171A2B] dark:text-[#9DA6BD] hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    <span>English (EN)</span>
-                  </button>
-                  <button
-                    onClick={() => { setLanguage('ru'); setIsLangDropdownOpen(false); }}
-                    className={`w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium cursor-pointer ${
-                      language === 'ru'
-                        ? 'text-[#635BFF] bg-[#635BFF]/10 font-bold'
-                        : 'text-[#171A2B] dark:text-[#9DA6BD] hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    <span>Русский (RU)</span>
-                  </button>
+                <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-[#12182B] rounded-xl shadow-lg border border-[#E6E8F0] dark:border-[#1F2840] py-1 z-50 animate-fade-in">
+                  {[
+                    { code: 'uz' as const, label: "O'zbek (UZ)" },
+                    { code: 'en' as const, label: 'English (EN)' },
+                    { code: 'ru' as const, label: 'Русский (RU)' },
+                    { code: 'ko' as const, label: '한국어 (KO)' },
+                    { code: 'ar' as const, label: 'العربية (AR)' }
+                  ].map((item) => (
+                    <button
+                      key={item.code}
+                      onClick={() => { setLanguage(item.code); setIsLangDropdownOpen(false); }}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium cursor-pointer ${
+                        language === item.code
+                          ? 'text-[#635BFF] bg-[#635BFF]/10 font-bold'
+                          : 'text-[#171A2B] dark:text-[#9DA6BD] hover:bg-gray-50 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Dark / Light Mode Switch */}
+            {/* Dark / Light Mode Switch (hidden on <sm, available in mobile drawer) */}
             <button
               onClick={toggleDarkMode}
               aria-label="Toggle theme"
-              className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-[#F7F8FC] dark:bg-[#12182B] hover:bg-gray-100 dark:hover:bg-[#1A223B] rounded-lg border border-[#E6E8F0] dark:border-[#1F2840] transition cursor-pointer shrink-0"
+              className="hidden sm:flex p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-[#F7F8FC] dark:bg-[#12182B] hover:bg-gray-100 dark:hover:bg-[#1A223B] rounded-lg border border-[#E6E8F0] dark:border-[#1F2840] transition cursor-pointer shrink-0"
             >
               {isDarkMode ? <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" /> : <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#635BFF]" />}
             </button>
@@ -308,7 +297,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                 </button>
                 <button
                   onClick={() => openAuthModal('admin')}
-                  className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm"
+                  className="hidden sm:flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm"
                   title="Admin sifatida kirish"
                 >
                   <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
@@ -368,7 +357,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
                     <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
 
                     <button
-                      onClick={() => { logout(); setIsUserDropdownOpen(false); }}
+                      onClick={() => {
+                        logout();
+                        setIsUserDropdownOpen(false);
+                        if (currentPath === '/dashboard' || currentPath === '/admin') {
+                          navigate('/');
+                        }
+                      }}
                       className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
@@ -446,6 +441,32 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               </span>
             </div>
           )}
+
+          {/* Mobile Language & Theme Controls */}
+          <div className="pt-3 mt-2 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(['uz', 'en', 'ru', 'ko', 'ar'] as const).map((code) => (
+                <button
+                  key={code}
+                  onClick={() => setLanguage(code)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase transition cursor-pointer ${
+                    language === code
+                      ? 'bg-[#635BFF] text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  {code}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={toggleDarkMode}
+              className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-200 flex items-center gap-1.5 cursor-pointer"
+            >
+              {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-[#635BFF]" />}
+              <span>{isDarkMode ? 'Yorug‘' : 'Tungi'}</span>
+            </button>
+          </div>
 
           {user && (user.role === 'admin' || user.role === 'super_admin') && (
             <div className="pt-2 border-t border-purple-100 dark:border-purple-900/40">

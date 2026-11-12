@@ -69,7 +69,7 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ courseId, na
 
   const handleEnrollOrContinue = async () => {
     if (!user) {
-      openAuthModal('login');
+      openAuthModal('register', `/courses/${courseId}`);
       return;
     }
 
@@ -130,7 +130,7 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ courseId, na
 
   const handleLessonItemClick = (lessonId: string) => {
     if (!user) {
-      openAuthModal('login');
+      openAuthModal('register', `/lessons/${lessonId}`);
       return;
     }
 
@@ -343,14 +343,43 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ courseId, na
               {/* CTA Action Button */}
               <div className="pt-4 flex flex-wrap items-center gap-3">
                 {course.is_enrolled ? (
-                  <button
-                    onClick={handleEnrollOrContinue}
-                    disabled={enrolling}
-                    className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm rounded-2xl shadow-xl shadow-indigo-500/25 flex items-center gap-2.5 transition transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-                  >
-                    <PlayCircle className="w-5 h-5" />
-                    <span>Darsni Davom Ettirish ({course.progress_percent || 0}%)</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={handleEnrollOrContinue}
+                      disabled={enrolling}
+                      className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm rounded-2xl shadow-xl shadow-indigo-500/25 flex items-center gap-2.5 transition transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                    >
+                      <PlayCircle className="w-5 h-5" />
+                      <span>Darsni Davom Ettirish ({course.progress_percent || 0}%)</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm("Haqiqatan ham ushbu kursdan chiqmoqchimisiz?")) return;
+                        setEnrolling(true);
+                        try {
+                          const token = localStorage.getItem('lison_token') || localStorage.getItem('ziyo_token');
+                          const res = await fetch(`/api/courses/${courseId}/enroll`, {
+                            method: 'DELETE',
+                            headers: { Authorization: `Bearer ${token}` }
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setCourse((prev) => (prev ? { ...prev, is_enrolled: false, progress_percent: 0 } : null));
+                          } else {
+                            alert(data.message || "Kursdan chiqishda xatolik yuz berdi.");
+                          }
+                        } catch {
+                          alert("Server bilan aloqada xatolik yuz berdi.");
+                        } finally {
+                          setEnrolling(false);
+                        }
+                      }}
+                      disabled={enrolling}
+                      className="px-5 py-3.5 rounded-2xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/40 font-bold text-sm transition cursor-pointer"
+                    >
+                      Kursdan chiqish
+                    </button>
+                  </>
                 ) : isPaid ? (
                   <>
                     <button

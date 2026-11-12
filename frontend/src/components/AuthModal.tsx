@@ -8,7 +8,15 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
-  const { isAuthModalOpen, closeAuthModal, authModalMode, smartAuth, login } = useAuth();
+  const {
+    isAuthModalOpen,
+    closeAuthModal,
+    authModalMode,
+    smartAuth,
+    login,
+    redirectAfterLogin,
+    setRedirectAfterLogin
+  } = useAuth();
 
   const [mode, setMode] = useState<'register' | 'admin'>('register');
   const [firstName, setFirstName] = useState('');
@@ -58,7 +66,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
         const res = await login(cleanEmail, cleanPassword);
         if (res.success) {
           if (res.user?.role === 'admin' || res.user?.role === 'super_admin') {
-            if (navigate) navigate('/admin');
+            const target = redirectAfterLogin || '/admin';
+            setRedirectAfterLogin(null);
+            if (navigate) navigate(target);
           } else {
             setError("Ushbu hisobda Administrator huquqi mavjud emas.");
           }
@@ -78,7 +88,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
 
         if (res.success) {
           if (res.user?.role === 'admin' || res.user?.role === 'super_admin') {
-            if (navigate) navigate('/admin');
+            const target = redirectAfterLogin || '/admin';
+            setRedirectAfterLogin(null);
+            if (navigate) navigate(target);
+          } else if (redirectAfterLogin) {
+            const target = redirectAfterLogin;
+            setRedirectAfterLogin(null);
+            if (navigate) navigate(target);
           }
         } else {
           // Xato bo'lsa kirmasin!

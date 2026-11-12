@@ -11,10 +11,12 @@ interface AuthContextType {
   logout: () => void;
   refreshUser: () => Promise<void>;
   updateCoins: (coins: number) => void;
-  openAuthModal: (mode?: 'login' | 'register' | 'admin') => void;
+  openAuthModal: (mode?: 'login' | 'register' | 'admin', redirectTo?: string) => void;
   closeAuthModal: () => void;
   isAuthModalOpen: boolean;
   authModalMode: 'login' | 'register' | 'admin';
+  redirectAfterLogin: string | null;
+  setRedirectAfterLogin: (path: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,9 +27,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'admin'>('register');
+  const [redirectAfterLogin, setRedirectAfterLogin] = useState<string | null>(null);
 
-  const openAuthModal = (mode: 'login' | 'register' | 'admin' = 'register') => {
+  const openAuthModal = (mode: 'login' | 'register' | 'admin' = 'register', redirectTo?: string) => {
     setAuthModalMode(mode === 'admin' ? 'admin' : 'register');
+    if (redirectTo) {
+      setRedirectAfterLogin(redirectTo);
+    }
     setIsAuthModalOpen(true);
   };
 
@@ -174,7 +180,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openAuthModal,
         closeAuthModal,
         isAuthModalOpen,
-        authModalMode
+        authModalMode,
+        redirectAfterLogin,
+        setRedirectAfterLogin
       }}
     >
       {children}

@@ -51,6 +51,16 @@ export const AITeacherPage: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [geminiConfigured, setGeminiConfigured] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch('/api/ai/status')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setGeminiConfigured(Boolean(d.gemini_configured));
+      })
+      .catch(() => {});
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -291,6 +301,15 @@ export const AITeacherPage: React.FC = () => {
         </div>
 
         {/* Quick Actions (Grammar, Vocabulary, Speaking, Translation) */}
+        {geminiConfigured === false && (
+          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2.5">
+            <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <div>
+              <span className="font-bold">Mahalliy Lingvistik Rejim (API kalit ulanmagan):</span>{' '}
+              Tashqi Gemini AI kaliti (`GEMINI_API_KEY`) serverga ulanmagan. Hozircha AI Ustoz o&apos;rnatilgan mahalliy lingvistik bazadan foydalanib javob bermoqda.
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <button
             onClick={() => setActiveMode('grammar')}

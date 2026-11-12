@@ -34,7 +34,7 @@ interface StudentDashboardPageProps {
 }
 
 export const StudentDashboardPage: React.FC<StudentDashboardPageProps> = ({ navigate }) => {
-  const { user, logout, openAuthModal } = useAuth();
+  const { user, isLoading: authLoading, logout, openAuthModal } = useAuth();
   const { t } = useLanguage();
 
   const [data, setData] = useState<any>(null);
@@ -245,6 +245,12 @@ export const StudentDashboardPage: React.FC<StudentDashboardPageProps> = ({ navi
   };
 
   useEffect(() => {
+    if (!authLoading && !user) {
+      openAuthModal('register', '/dashboard');
+    }
+  }, [authLoading, user]);
+
+  useEffect(() => {
     if (!user) return;
     const fetchStats = async () => {
       try {
@@ -265,16 +271,27 @@ export const StudentDashboardPage: React.FC<StudentDashboardPageProps> = ({ navi
     fetchStats();
   }, [user]);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-9 h-9 border-3 border-[#635BFF] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <h2 className="text-xl font-bold">Shaxsiy kabinetga kirish talab qilinadi</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Kurslaringiz va natijalaringizni ko&apos;rish uchun hisobingizga kiring.
+          </p>
           <button
-            onClick={() => openAuthModal('login')}
-            className="px-6 py-3 bg-primary-600 text-white rounded-2xl text-xs font-bold"
+            onClick={() => openAuthModal('register', '/dashboard')}
+            className="px-6 py-3 bg-[#635BFF] hover:bg-[#5249F5] text-white rounded-2xl text-xs font-bold transition cursor-pointer"
           >
-            Hisobga kirish
+            Boshlash / Hisobga kirish
           </button>
         </div>
       </div>
@@ -831,7 +848,45 @@ export const StudentDashboardPage: React.FC<StudentDashboardPageProps> = ({ navi
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-gray-400 py-6 text-center">Hozircha kurslarga a'zo bo'lmagansiz.</p>
+                  <div className="space-y-4 py-2">
+                    <div className="text-center py-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-dashed border-gray-200 dark:border-gray-700">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        Hozircha birorta kursga a&apos;zo bo&apos;lmagansiz. Quyidagi tavsiya etilgan kurslardan boshlang:
+                      </p>
+                      <button
+                        onClick={() => navigate('/courses')}
+                        className="px-4 py-2 bg-[#635BFF] hover:bg-[#5249F5] text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                      >
+                        Barcha kurslarni ko&apos;rish
+                      </button>
+                    </div>
+                    {data?.recommended_courses && data.recommended_courses.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {data.recommended_courses.map((rc: any) => (
+                          <div
+                            key={rc.id}
+                            onClick={() => navigate(`/courses/${rc.id}`)}
+                            className="p-3 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-[#635BFF] flex items-center gap-3 cursor-pointer transition bg-white dark:bg-gray-900"
+                          >
+                            <img
+                              src={rc.cover_image}
+                              alt={rc.title}
+                              className="w-12 h-12 rounded-xl object-cover shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                                {rc.title}
+                              </h4>
+                              <span className="text-[11px] text-gray-400">
+                                {rc.language} • {rc.level}
+                              </span>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-[#635BFF] shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

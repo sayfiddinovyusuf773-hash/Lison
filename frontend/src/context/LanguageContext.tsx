@@ -13,7 +13,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<LanguageCode>(() => {
     const saved = localStorage.getItem('ziyo_lang') as LanguageCode;
-    return saved === 'uz' || saved === 'en' || saved === 'ru' ? saved : 'uz';
+    return saved === 'uz' || saved === 'en' || saved === 'ru' || saved === 'ko' || saved === 'ar' ? saved : 'uz';
   });
 
   const setLanguage = (lang: LanguageCode) => {

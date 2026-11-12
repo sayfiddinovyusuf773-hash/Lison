@@ -19,13 +19,19 @@ import {
 interface CoursesPageProps {
   navigate: (path: string) => void;
   initialLang?: string;
+  searchQuery?: string;
 }
 
-export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang }) => {
+export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang, searchQuery }) => {
   const { t } = useLanguage();
   const { user, openAuthModal } = useAuth();
 
+  const urlParams = new URLSearchParams(searchQuery || window.location.search);
+  const queryLang = urlParams.get('lang') || initialLang || 'all';
+  const queryTeacherId = urlParams.get('teacher_id') || '';
+
   const [courses, setCourses] = useState<Course[]>(() => {
+    if (queryLang !== 'all' || queryTeacherId) return [];
     try {
       const cached = localStorage.getItem('lison_cached_all_courses');
       return cached ? JSON.parse(cached) : [];
@@ -35,9 +41,18 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
   });
   const [loading, setLoading] = useState(() => courses.length === 0);
   const [search, setSearch] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(initialLang || 'all');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(queryLang);
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>(queryTeacherId);
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<string>('popularity');
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchQuery || window.location.search);
+    const nextLang = params.get('lang') || initialLang || 'all';
+    const nextTeacher = params.get('teacher_id') || '';
+    setSelectedLanguage(nextLang);
+    setSelectedTeacherId(nextTeacher);
+  }, [searchQuery, initialLang]);
 
   const languagesList = [
     { id: 'all', label: 'Barcha yo\'nalishlar', flag: '🌐' },
@@ -71,12 +86,13 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
       if (search.trim()) url += `&search=${encodeURIComponent(search.trim())}`;
       if (selectedLanguage !== 'all') url += `&language=${encodeURIComponent(selectedLanguage)}`;
       if (selectedLevel !== 'all') url += `&level=${encodeURIComponent(selectedLevel)}`;
+      if (selectedTeacherId) url += `&teacher_id=${encodeURIComponent(selectedTeacherId)}`;
 
       const res = await fetch(url, { headers, signal: controller.signal });
       const data = await res.json();
       if (data.success && data.courses) {
         setCourses(data.courses);
-        if (selectedLanguage === 'all' && selectedLevel === 'all' && !search.trim()) {
+        if (selectedLanguage === 'all' && selectedLevel === 'all' && !search.trim() && !selectedTeacherId) {
           localStorage.setItem('lison_cached_all_courses', JSON.stringify(data.courses));
         }
       }
@@ -92,7 +108,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
 
   useEffect(() => {
     fetchCourses();
-  }, [selectedLanguage, selectedLevel, selectedSort]);
+  }, [selectedLanguage, selectedLevel, selectedSort, selectedTeacherId]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +117,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
 
   const handleEnrollOrOpen = async (course: Course) => {
     if (!user) {
-      openAuthModal('login');
+      openAuthModal('register', `/courses/${course.id}`);
       return;
     }
     navigate(`/courses/${course.id}`);
@@ -110,7 +126,7 @@ export const CoursesPage: React.FC<CoursesPageProps> = ({ navigate, initialLang 
   const handleWishlistToggle = async (e: React.MouseEvent, courseId: string) => {
     e.stopPropagation();
     if (!user) {
-      openAuthModal('login');
+      openAuthModal('register', '/courses');
       return;
     }
     try {

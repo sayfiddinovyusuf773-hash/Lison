@@ -45,8 +45,35 @@ app.get('/api/health', (_req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+// Simple in-memory rate limiter for auth endpoints (brute-force protection)
+const authAttempts = new Map();
+const authRateLimiter = (req, res, next) => {
+    if (req.method !== 'POST') {
+        next();
+        return;
+    }
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const windowMs = 10 * 60 * 1000; // 10 minutes
+    const maxAttempts = 30;
+    const entry = authAttempts.get(ip);
+    if (!entry || now > entry.resetAt) {
+        authAttempts.set(ip, { count: 1, resetAt: now + windowMs });
+        next();
+        return;
+    }
+    if (entry.count >= maxAttempts) {
+        res.status(429).json({
+            success: false,
+            message: 'Juda ko\'p urinish qilindi. Iltimos, 10 daqiqadan so\'ng qayta urinib ko\'ring.'
+        });
+        return;
+    }
+    entry.count += 1;
+    next();
+};
 // Mount Routes
-app.use('/api/auth', auth_routes_1.default);
+app.use('/api/auth', authRateLimiter, auth_routes_1.default);
 app.use('/api/courses', courses_routes_1.default);
 app.use('/api/lessons', lessons_routes_1.default);
 app.use('/api/quizzes', quizzes_routes_1.default);

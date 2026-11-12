@@ -100,8 +100,13 @@ router.post('/smart-auth', async (req: AuthRequest, res: Response): Promise<void
     // Initial notification
     await executeRun(
       `INSERT INTO notifications (id, user_id, title, message, type, link_url)
-       VALUES (?, ?, 'Xush kelibsiz!', 'LISON platformasiga muvaffaqiyatli a\'zo bo\'ldingiz. +50 bonus XP berildi!', 'system', '/courses')`,
-      ['notif-' + Date.now(), userId]
+       VALUES (?, ?, ?, ?, 'system', '/courses')`,
+      [
+        'notif-' + Date.now(),
+        userId,
+        'Xush kelibsiz!',
+        "LISON platformasiga muvaffaqiyatli a'zo bo'ldingiz. +50 bonus XP berildi!"
+      ]
     );
 
     await logAudit(userId, 'REGISTER', 'USERS', `New student registration: ${normalizedEmail}`, req.ip);
@@ -174,8 +179,13 @@ router.post('/register', async (req: AuthRequest, res: Response): Promise<void> 
     // Initial notification
     await executeRun(
       `INSERT INTO notifications (id, user_id, title, message, type, link_url)
-       VALUES (?, ?, 'Xush kelibsiz!', 'LISON platformasiga muvaffaqiyatli a\'zo bo\'ldingiz. +50 bonus XP berildi!', 'system', '/courses')`,
-      ['notif-' + Date.now(), userId]
+       VALUES (?, ?, ?, ?, 'system', '/courses')`,
+      [
+        'notif-' + Date.now(),
+        userId,
+        'Xush kelibsiz!',
+        "LISON platformasiga muvaffaqiyatli a'zo bo'ldingiz. +50 bonus XP berildi!"
+      ]
     );
 
     await logAudit(userId, 'REGISTER', 'USERS', `New student registration: ${normalizedEmail}`, req.ip);

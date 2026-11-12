@@ -39,7 +39,7 @@ interface AdminDashboardPageProps {
 }
 
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate }) => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading, openAuthModal } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'users' | 'courses' | 'certificates' | 'ai' | 'settings'>('overview');
   const [stats, setStats] = useState<any>(null);
@@ -548,6 +548,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#F7F8FC] dark:bg-[#080C16]">
+        <div className="w-9 h-9 border-3 border-[#635BFF] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#F7F8FC] dark:bg-[#080C16]">
@@ -555,9 +563,17 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
           <ShieldAlert className="w-12 h-12 text-red-500 mx-auto" />
           <h2 className="text-xl font-bold">Ruxsat Berilmagan</h2>
           <p className="text-xs text-gray-500">Ushbu sahifa faqat platforma ma'murlari uchun mo'ljallangan.</p>
-          <button onClick={() => navigate('/')} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">
-            Bosh sahifaga qaytish
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => openAuthModal('admin', '/admin')}
+              className="px-4 py-2 bg-[#635BFF] hover:bg-[#5249F5] text-white rounded-xl text-xs font-bold cursor-pointer"
+            >
+              Admin sifatida kirish
+            </button>
+            <button onClick={() => navigate('/')} className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-xl text-xs font-bold cursor-pointer">
+              Bosh sahifaga qaytish
+            </button>
+          </div>
         </div>
       </div>
     );

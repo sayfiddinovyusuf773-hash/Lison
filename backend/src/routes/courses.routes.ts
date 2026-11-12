@@ -189,7 +189,7 @@ router.post('/:id/enroll', authenticateToken, async (req: AuthRequest, res: Resp
     // Check if course is paid and user is not yet approved
     if (course.is_paid === 1) {
       const existingEnr = await queryOne(
-        `SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?`,
+        `SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? AND is_wishlist = 0`,
         [userId, courseId]
       );
       if (!existingEnr) {
@@ -209,15 +209,15 @@ router.post('/:id/enroll', authenticateToken, async (req: AuthRequest, res: Resp
     );
 
     const existing = await queryOne(
-      `SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?`,
+      `SELECT id, is_wishlist FROM enrollments WHERE user_id = ? AND course_id = ?`,
       [userId, courseId]
     );
 
     if (!existing) {
       const enrId = 'enr-' + Date.now();
       await executeRun(
-        `INSERT INTO enrollments (id, user_id, course_id, progress_percent, is_completed, last_accessed_lesson_id)
-         VALUES (?, ?, ?, 0, 0, ?)`,
+        `INSERT INTO enrollments (id, user_id, course_id, progress_percent, is_completed, is_wishlist, last_accessed_lesson_id)
+         VALUES (?, ?, ?, 0, 0, 0, ?)`,
         [enrId, userId, courseId, firstLesson ? firstLesson.id : null]
       );
 
@@ -227,14 +227,21 @@ router.post('/:id/enroll', authenticateToken, async (req: AuthRequest, res: Resp
       // Notification
       await executeRun(
         `INSERT INTO notifications (id, user_id, title, message, type, link_url)
-         VALUES (?, ?, 'Kursga a\'zo bo\'ldingiz!', ?, 'course', ?)`,
+         VALUES (?, ?, ?, ?, 'course', ?)`,
         [
           'notif-' + Date.now(),
           userId,
+          "Kursga a'zo bo'ldingiz!",
           `"${course.title}" kursiga muvaffaqiyatli a'zo bo'ldingiz. O'rganishni boshlang!`,
           `/courses/${courseId}`
         ]
       );
+    } else if (existing.is_wishlist === 1) {
+      await executeRun(
+        `UPDATE enrollments SET is_wishlist = 0, enrolled_at = CURRENT_TIMESTAMP, last_accessed_lesson_id = COALESCE(last_accessed_lesson_id, ?) WHERE id = ?`,
+        [firstLesson ? firstLesson.id : null, existing.id]
+      );
+      await executeRun(`UPDATE courses SET enrollment_count = enrollment_count + 1 WHERE id = ?`, [courseId]);
     }
 
     res.json({
@@ -245,6 +252,38 @@ router.post('/:id/enroll', authenticateToken, async (req: AuthRequest, res: Resp
   } catch (err) {
     console.error('Enrollment error:', err);
     res.status(500).json({ success: false, message: 'A\'zo bo\'lishda xatolik yuz berdi.' });
+  }
+});
+
+// Unenroll from course ("Kursdan chiqish")
+router.delete('/:id/enroll', authenticateToken, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const courseId = req.params.id;
+    const userId = req.user!.id;
+
+    const existing = await queryOne(
+      `SELECT id, is_wishlist FROM enrollments WHERE user_id = ? AND course_id = ?`,
+      [userId, courseId]
+    );
+
+    if (!existing) {
+      res.status(404).json({ success: false, message: 'Siz ushbu kursga a\'zo emassiz.' });
+      return;
+    }
+
+    await executeRun(`DELETE FROM enrollments WHERE id = ?`, [existing.id]);
+
+    if (!existing.is_wishlist) {
+      await executeRun(
+        `UPDATE courses SET enrollment_count = CASE WHEN enrollment_count > 0 THEN enrollment_count - 1 ELSE 0 END WHERE id = ?`,
+        [courseId]
+      );
+    }
+
+    res.json({ success: true, message: 'Kursdan muvaffaqiyatli chiqdingiz.' });
+  } catch (err) {
+    console.error('Unenroll error:', err);
+    res.status(500).json({ success: false, message: 'Kursdan chiqishda xatolik yuz berdi.' });
   }
 });
 
@@ -265,11 +304,11 @@ router.post('/:id/unlock-with-coins', authenticateToken, async (req: AuthRequest
     }
 
     const existingEnr = await queryOne(
-      `SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?`,
+      `SELECT id, is_wishlist FROM enrollments WHERE user_id = ? AND course_id = ?`,
       [userId, courseId]
     );
 
-    if (existingEnr) {
+    if (existingEnr && !existingEnr.is_wishlist) {
       res.json({
         success: true,
         already_enrolled: true,
@@ -294,17 +333,24 @@ router.post('/:id/unlock-with-coins', authenticateToken, async (req: AuthRequest
     const newCoins = currentCoins - requiredCoins;
     await executeRun(`UPDATE users SET coins = ? WHERE id = ?`, [newCoins, userId]);
 
-    // Create enrollment
+    // Create or upgrade wishlist enrollment
     const firstLesson = await queryOne(
       `SELECT id FROM lessons WHERE course_id = ? ORDER BY order_index ASC LIMIT 1`,
       [courseId]
     );
-    const enrId = 'enr-' + Date.now();
-    await executeRun(
-      `INSERT INTO enrollments (id, user_id, course_id, progress_percent, is_completed, last_accessed_lesson_id)
-       VALUES (?, ?, ?, 0, 0, ?)`,
-      [enrId, userId, courseId, firstLesson ? firstLesson.id : null]
-    );
+    if (existingEnr) {
+      await executeRun(
+        `UPDATE enrollments SET is_wishlist = 0, enrolled_at = CURRENT_TIMESTAMP, last_accessed_lesson_id = COALESCE(last_accessed_lesson_id, ?) WHERE id = ?`,
+        [firstLesson ? firstLesson.id : null, existingEnr.id]
+      );
+    } else {
+      const enrId = 'enr-' + Date.now();
+      await executeRun(
+        `INSERT INTO enrollments (id, user_id, course_id, progress_percent, is_completed, is_wishlist, last_accessed_lesson_id)
+         VALUES (?, ?, ?, 0, 0, 0, ?)`,
+        [enrId, userId, courseId, firstLesson ? firstLesson.id : null]
+      );
+    }
 
     await executeRun(`UPDATE courses SET enrollment_count = enrollment_count + 1 WHERE id = ?`, [courseId]);
 
