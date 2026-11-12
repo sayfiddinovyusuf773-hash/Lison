@@ -61,6 +61,28 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response): P
       wasRedirected = true;
     }
 
+    // Check if user is enrolled in this course (Must have valid enrollment, not just wishlist!)
+    // Admin and super_admin are exempt so they can preview/manage all lessons
+    const isAdmin = req.user!.role === 'admin' || req.user!.role === 'super_admin';
+    if (!isAdmin) {
+      const enrollment = await queryOne(
+        `SELECT id, is_completed, progress_percent, is_wishlist
+         FROM enrollments
+         WHERE user_id = ? AND course_id = ?`,
+        [userId, lesson.course_id]
+      );
+
+      if (!enrollment || enrollment.is_wishlist === 1) {
+        res.status(403).json({
+          success: false,
+          locked: true,
+          course_id: lesson.course_id,
+          message: 'Ushbu darsni ko‘rish uchun avval kursga a‘zo bo‘ling (kursni tanlang).'
+        });
+        return;
+      }
+    }
+
     try {
       lesson.vocabulary = JSON.parse(lesson.vocabulary_json || '[]');
     } catch {

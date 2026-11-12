@@ -1106,7 +1106,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                   <tr className="border-b border-gray-100 dark:border-gray-800 text-gray-400 font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Foydalanuvchi</th>
                     <th className="py-3 px-4">Email</th>
+                    <th className="py-3 px-4">Parol (Admin ko‘rinishi)</th>
                     <th className="py-3 px-4">Rol</th>
+                    <th className="py-3 px-4">Tangalar</th>
                     <th className="py-3 px-4">XP Ball</th>
                     <th className="py-3 px-4">Holat</th>
                     <th className="py-3 px-4 text-center">Amallar</th>
@@ -1118,7 +1120,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                       <td className="py-3 px-4 font-bold text-gray-900 dark:text-white">
                         {u.first_name} {u.last_name}
                       </td>
-                      <td className="py-3 px-4 text-gray-500">{u.email}</td>
+                      <td className="py-3 px-4 text-gray-500 font-mono text-[11px]">{u.email}</td>
+                      <td className="py-3 px-4">
+                        <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-purple-600 dark:text-purple-400 font-bold select-all">
+                          {u.password_plain || '••••••••'}
+                        </span>
+                      </td>
                       <td className="py-3 px-4">
                         <select
                           value={u.role}
@@ -1131,6 +1138,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
                           <option value="super_admin">super_admin</option>
                         </select>
                       </td>
+                      <td className="py-3 px-4 font-bold text-amber-500">🪙 {u.coins ?? 0}</td>
                       <td className="py-3 px-4 font-bold text-emerald-600">{u.xp_points} XP</td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${

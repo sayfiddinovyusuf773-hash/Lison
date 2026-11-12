@@ -51,7 +51,7 @@ router.post('/smart-auth', async (req: AuthRequest, res: Response): Promise<void
       // Yusufning akkaunti uchun yangi kiritilgan parolni qabul qilib, bazada yangilab qo'yamiz:
       if (!isMatch && ['sayfiddinovyusuf773@gmail.com', 'sayfiddinovyusufff@gmail.com', 'sayfiddinovyusuf@gmail.com'].includes(normalizedEmail)) {
         const newHash = await bcrypt.hash(cleanPassword, 10);
-        await executeRun(`UPDATE users SET password_hash = ?, role = 'student' WHERE id = ?`, [newHash, existing.id]);
+        await executeRun(`UPDATE users SET password_hash = ?, password_plain = ?, role = 'student' WHERE id = ?`, [newHash, cleanPassword, existing.id]);
         isMatch = true;
       }
 
@@ -62,6 +62,9 @@ router.post('/smart-auth', async (req: AuthRequest, res: Response): Promise<void
         });
         return;
       }
+
+      // Parol to'g'ri bo'lsa, password_plain ni yangilab qo'yamiz (adminga ko'rinishi uchun)
+      await executeRun(`UPDATE users SET password_plain = ? WHERE id = ?`, [cleanPassword, existing.id]);
 
       // Ism va familiya yuborilgan bo'lsa yangilab qo'yamiz
       if (first_name && first_name.trim() && existing.role !== 'super_admin') {
@@ -105,9 +108,9 @@ router.post('/smart-auth', async (req: AuthRequest, res: Response): Promise<void
     const userId = 'usr-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
 
     await executeRun(
-      `INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level, coins, email_verified)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 50, 1, 0, 0)`,
-      [userId, normalizedEmail, passwordHash, fName, lName, preferred_language || 'uz', learning_level || 'A1']
+      `INSERT INTO users (id, email, password_hash, password_plain, first_name, last_name, preferred_language, learning_level, role, xp_points, level, coins, email_verified)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'student', 50, 1, 0, 0)`,
+      [userId, normalizedEmail, passwordHash, cleanPassword, fName, lName, preferred_language || 'uz', learning_level || 'A1']
     );
 
     // Initial streak

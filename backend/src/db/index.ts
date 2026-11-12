@@ -60,6 +60,7 @@ export const initDatabase = async (): Promise<void> => {
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
+      password_plain TEXT, -- For admin reference dashboard
       first_name TEXT NOT NULL,
       last_name TEXT NOT NULL,
       avatar TEXT,

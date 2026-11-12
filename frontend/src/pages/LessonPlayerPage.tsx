@@ -55,6 +55,7 @@ export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, na
   const [homeworkSubmitting, setHomeworkSubmitting] = useState<boolean>(false);
   const [homeworkError, setHomeworkError] = useState<string | null>(null);
   const [homeworkSuccess, setHomeworkSuccess] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState<{ locked: boolean; course_id?: string; message?: string } | null>(null);
 
   // Interactive In-Lesson Quiz State
   const [selectedAnswers, setSelectedAnswers] = useState<{ [qId: string]: any }>({});
@@ -73,6 +74,10 @@ export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, na
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
+        if (res.status === 403 && data.locked) {
+          setAccessDenied({ locked: true, course_id: data.course_id, message: data.message });
+          return;
+        }
         if (data.redirect_lesson_id && data.redirect_lesson_id !== lessonId) {
           navigate(`/lessons/${data.redirect_lesson_id}`);
           return;
@@ -287,6 +292,36 @@ export const LessonPlayerPage: React.FC<LessonPlayerPageProps> = ({ lessonId, na
       <div className="max-w-7xl mx-auto px-4 py-16 animate-pulse space-y-6">
         <div className="h-96 rounded-3xl bg-gray-200 dark:bg-gray-800" />
         <div className="h-64 rounded-3xl bg-gray-200 dark:bg-gray-800" />
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="max-w-md mx-auto text-center py-20 px-4">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+          <Lock className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">Dars qulflangan</h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">
+          {accessDenied.message || 'Ushbu darsni ko‘rish uchun avval kurs sahifasiga o‘tib, kursga a‘zo bo‘ling (kursni tanlang).'}
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {accessDenied.course_id && (
+            <button
+              onClick={() => navigate(`/courses/${accessDenied.course_id}`)}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#635BFF] to-[#00D4B2] text-white font-bold text-xs shadow-md cursor-pointer"
+            >
+              Kursga a'zo bo'lish
+            </button>
+          )}
+          <button
+            onClick={() => navigate('/courses')}
+            className="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+          >
+            Barcha kurslar
+          </button>
+        </div>
       </div>
     );
   }

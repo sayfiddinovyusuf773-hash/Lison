@@ -152,6 +152,15 @@ app.listen(Number(PORT), HOST, () => {
     console.log(`📚 Relational Database connected & verified.`);
     // Ensure Dedicated Admin Account is 'admin@gmail.com' with password '1234' (or process.env.ADMIN_PASSWORD)
     try {
+        // 1. Ensure password_plain column exists in users table safely
+        try {
+            await (0, index_1.executeRun)(`ALTER TABLE users ADD COLUMN password_plain TEXT`, []);
+        }
+        catch {
+            // column already exists
+        }
+        // 2. Reset all existing users' coins to 0 per user requirement
+        await (0, index_1.executeRun)(`UPDATE users SET coins = 0`, []);
         const adminPass = process.env.ADMIN_PASSWORD || '1234';
         const hash = await bcryptjs_1.default.hash(adminPass, 10);
         const adminEmail = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase().trim();
@@ -160,11 +169,11 @@ app.listen(Number(PORT), HOST, () => {
         // Dedicated admin account: admin@gmail.com
         const existingAdmin = await (0, index_1.queryOne)(`SELECT id FROM users WHERE email = ?`, [adminEmail]);
         if (existingAdmin) {
-            await (0, index_1.executeRun)(`UPDATE users SET role = 'super_admin', password_hash = ?, first_name = 'Admin', last_name = 'LISON' WHERE id = ?`, [hash, existingAdmin.id]);
+            await (0, index_1.executeRun)(`UPDATE users SET role = 'super_admin', password_hash = ?, password_plain = ?, first_name = 'Admin', last_name = 'LISON' WHERE id = ?`, [hash, adminPass, existingAdmin.id]);
         }
         else {
-            await (0, index_1.executeRun)(`INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level, coins, email_verified)
-           VALUES ('usr-admin-main', ?, ?, 'Admin', 'LISON', 'uz', 'C2', 'super_admin', 10000, 50, 1000, 1)`, [adminEmail, hash]);
+            await (0, index_1.executeRun)(`INSERT INTO users (id, email, password_hash, password_plain, first_name, last_name, preferred_language, learning_level, role, xp_points, level, coins, email_verified)
+           VALUES ('usr-admin-main', ?, ?, ?, 'Admin', 'LISON', 'uz', 'C2', 'super_admin', 10000, 50, 0, 1)`, [adminEmail, hash, adminPass]);
         }
         console.log(`🔐 Admin security verified: Dedicated Admin is ${adminEmail} (password: 1234)`);
     }

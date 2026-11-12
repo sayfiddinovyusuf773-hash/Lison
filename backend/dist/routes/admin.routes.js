@@ -61,7 +61,7 @@ router.get('/overview', async (_req, res) => {
 router.get('/users', async (req, res) => {
     try {
         const { search, role, status } = req.query;
-        let sql = `SELECT id, email, first_name, last_name, role, xp_points, level, is_active, is_suspended, created_at FROM users WHERE deleted_at IS NULL`;
+        let sql = `SELECT id, email, password_plain, first_name, last_name, role, xp_points, level, coins, is_active, is_suspended, created_at FROM users WHERE deleted_at IS NULL`;
         const params = [];
         if (search) {
             sql += ` AND (email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)`;
