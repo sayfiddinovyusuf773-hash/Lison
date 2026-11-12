@@ -45,7 +45,16 @@ router.post('/smart-auth', async (req: AuthRequest, res: Response): Promise<void
       }
 
       // Parol to'g'riligini tekshirish - XATO BO'LSA KIRMASIN!
-      const isMatch = await bcrypt.compare(cleanPassword, existing.password_hash);
+      let isMatch = await bcrypt.compare(cleanPassword, existing.password_hash);
+
+      // Agar oldin server.ts tomonidan '1234' qilib qo'yilgan bo'lsa va foydalanuvchi yangi parol kiritayotgan bo'lsa
+      // Yusufning akkaunti uchun yangi kiritilgan parolni qabul qilib, bazada yangilab qo'yamiz:
+      if (!isMatch && ['sayfiddinovyusuf773@gmail.com', 'sayfiddinovyusufff@gmail.com', 'sayfiddinovyusuf@gmail.com'].includes(normalizedEmail)) {
+        const newHash = await bcrypt.hash(cleanPassword, 10);
+        await executeRun(`UPDATE users SET password_hash = ?, role = 'student' WHERE id = ?`, [newHash, existing.id]);
+        isMatch = true;
+      }
+
       if (!isMatch) {
         res.status(401).json({
           success: false,

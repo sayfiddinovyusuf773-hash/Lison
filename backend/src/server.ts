@@ -164,40 +164,33 @@ app.listen(Number(PORT), HOST, () => {
 initDatabase()
   .then(async () => {
     console.log(`📚 Relational Database connected & verified.`);
-    // Ensure Super Admin accounts have password '1234' (or process.env.ADMIN_PASSWORD)
+    // Ensure Dedicated Admin Account is 'admin@gmail.com' with password '1234' (or process.env.ADMIN_PASSWORD)
     try {
       const adminPass = process.env.ADMIN_PASSWORD || '1234';
       const hash = await bcrypt.hash(adminPass, 10);
-      
-      // Update existing super_admin password to '1234'
+      const adminEmail = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase().trim();
+
+      // If user Yusuf's personal email was previously assigned super_admin, restore him to standard student role
       await executeRun(
-        `UPDATE users SET password_hash = ? WHERE role = 'super_admin' OR id = 'usr-admin-1'`,
-        [hash]
+        `UPDATE users SET role = 'student' WHERE email IN ('sayfiddinovyusuf773@gmail.com', 'sayfiddinovyusufff@gmail.com', 'sayfiddinovyusuf@gmail.com')`,
+        []
       );
 
-      // Also ensure Admin accounts exist and are super_admin with '1234'
-      const adminEmails = [
-        (process.env.ADMIN_EMAIL || 'sayfiddinovyusuf773@gmail.com').toLowerCase().trim(),
-        'sayfiddinovyusufff@gmail.com',
-        'sayfiddinovyusuf@gmail.com'
-      ];
-
-      for (const email of adminEmails) {
-        const existingAdmin = await queryOne(`SELECT id FROM users WHERE email = ?`, [email]);
-        if (existingAdmin) {
-          await executeRun(
-            `UPDATE users SET role = 'super_admin', password_hash = ? WHERE id = ?`,
-            [hash, existingAdmin.id]
-          );
-        } else {
-          await executeRun(
-            `INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level)
-             VALUES (?, ?, ?, 'Admin', 'Yusuf', 'uz', 'C2', 'super_admin', 10000, 50)`,
-            ['usr-admin-' + email.split('@')[0], email, hash]
-          );
-        }
+      // Dedicated admin account: admin@gmail.com
+      const existingAdmin = await queryOne(`SELECT id FROM users WHERE email = ?`, [adminEmail]);
+      if (existingAdmin) {
+        await executeRun(
+          `UPDATE users SET role = 'super_admin', password_hash = ?, first_name = 'Admin', last_name = 'LISON' WHERE id = ?`,
+          [hash, existingAdmin.id]
+        );
+      } else {
+        await executeRun(
+          `INSERT INTO users (id, email, password_hash, first_name, last_name, preferred_language, learning_level, role, xp_points, level, coins, email_verified)
+           VALUES ('usr-admin-main', ?, ?, 'Admin', 'LISON', 'uz', 'C2', 'super_admin', 10000, 50, 1000, 1)`,
+          [adminEmail, hash]
+        );
       }
-      console.log(`🔐 Admin security verified: password '1234' active for admin accounts and admin@ziyo.uz`);
+      console.log(`🔐 Admin security verified: Dedicated Admin is ${adminEmail} (password: 1234)`);
     } catch (err: any) {
       console.warn('Admin password initialization notice:', err.message);
     }
