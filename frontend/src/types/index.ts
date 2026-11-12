@@ -13,6 +13,7 @@ export interface User {
   level: number;
   daily_goal_minutes: number;
   coins?: number;
+  email_verified?: number;
   streak?: number;
   longest_streak?: number;
   created_at?: string;

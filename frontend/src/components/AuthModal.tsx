@@ -26,6 +26,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [learningLevel, setLearningLevel] = useState('A1');
   const [preferredLanguage, setPreferredLanguage] = useState('en');
+  const [acceptedTerms, setAcceptedTerms] = useState(true);
+  const [forgotStep, setForgotStep] = useState<'none' | 'request' | 'reset'>('none');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -36,6 +41,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
       setEmail('');
       setPassword('');
       setError(null);
+      setInfoMessage(null);
+      setForgotStep('none');
     }
   }, [authModalMode, isAuthModalOpen]);
 
@@ -55,6 +62,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
 
     if (cleanPassword.length < 4) {
       setError("Parol kamida 4 ta belgidan iborat bo'lishi kerak.");
+      return;
+    }
+
+    if (mode === 'register' && !acceptedTerms) {
+      setError("Davom etish uchun foydalanuvchi shartlariga rozilik bildiring.");
       return;
     }
 
@@ -186,6 +198,109 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
           </div>
         )}
 
+        {infoMessage && (
+          <div className="p-3 mb-4 text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 dark:text-emerald-300 rounded-xl border border-emerald-200 dark:border-emerald-900/60">
+            {infoMessage}
+          </div>
+        )}
+
+        {forgotStep !== 'none' ? (
+          <div className="space-y-3.5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Parolni tiklash</h3>
+              <button
+                type="button"
+                onClick={() => { setForgotStep('none'); setError(null); setInfoMessage(null); }}
+                className="text-xs font-bold text-[#635BFF] hover:underline cursor-pointer"
+              >
+                Orqaga
+              </button>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Email manzilingiz</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="misol@gmail.com"
+                className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#635BFF] outline-none box-border"
+              />
+            </div>
+            {forgotStep === 'reset' && (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">6 xonali tiklash kodi</label>
+                  <input
+                    type="text"
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value)}
+                    placeholder="123456"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#635BFF] outline-none box-border"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Yangi parol</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Kamida 4 belgi"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#635BFF] outline-none box-border"
+                  />
+                </div>
+              </>
+            )}
+            <button
+              type="button"
+              disabled={loading}
+              onClick={async () => {
+                setError(null);
+                setInfoMessage(null);
+                setLoading(true);
+                try {
+                  if (forgotStep === 'request') {
+                    const res = await fetch('/api/auth/forgot-password', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: email.trim().toLowerCase() })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      setInfoMessage(data.message);
+                      setForgotStep('reset');
+                    } else {
+                      setError(data.message || 'Kod yuborib bo‘lmadi.');
+                    }
+                  } else {
+                    const res = await fetch('/api/auth/reset-password', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email: email.trim().toLowerCase(),
+                        code: resetCode.trim(),
+                        new_password: newPassword.trim()
+                      })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      setInfoMessage(data.message);
+                      setForgotStep('none');
+                    } else {
+                      setError(data.message || 'Parolni tiklab bo‘lmadi.');
+                    }
+                  }
+                } catch {
+                  setError('Server bilan aloqada xatolik yuz berdi.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="w-full py-2.5 px-4 bg-[#635BFF] hover:bg-[#5249F5] text-white font-bold text-sm rounded-xl transition cursor-pointer disabled:opacity-50"
+            >
+              {loading ? 'Yuborilmoqda...' : forgotStep === 'request' ? 'Tiklash kodini yuborish' : 'Yangi parolni saqlash'}
+            </button>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* O'quvchilar Boshlash rejimida: Ism va Familiya */}
           {mode === 'register' && (
@@ -335,6 +450,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
             </div>
           )}
 
+          {/* Terms & Forgot Password (register mode) */}
+          {mode === 'register' && (
+            <div className="flex items-center justify-between gap-2 pt-0.5">
+              <label className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="rounded border-gray-300 text-[#635BFF] focus:ring-[#635BFF]"
+                />
+                <span>Foydalanuvchi shartlariga roziman</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => { setForgotStep('request'); setError(null); setInfoMessage(null); }}
+                className="text-[11px] font-bold text-[#635BFF] hover:underline cursor-pointer shrink-0"
+              >
+                Parolni unutdingizmi?
+              </button>
+            </div>
+          )}
+
           {/* Submit Button */}
           <button
             type="submit"
@@ -359,7 +496,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({ navigate }) => {
               </>
             )}
           </button>
+
+          {mode === 'register' && (
+            <button
+              type="button"
+              onClick={async () => {
+                setError(null);
+                try {
+                  const res = await fetch('/api/auth/email-status');
+                  const data = await res.json();
+                  if (!data.google_oauth_configured) {
+                    setError('Google OAuth 2.0 serverda hali sozlanmagan (GOOGLE_CLIENT_ID muhit o‘zgaruvchisi talab qilinadi).');
+                  } else {
+                    setInfoMessage('Google OAuth ulangan. Brauzer Google Sign-In oynasi orqali kiring.');
+                  }
+                } catch {
+                  setError('Server holatini tekshirib bo‘lmadi.');
+                }
+              }}
+              className="w-full py-2.5 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-200 transition cursor-pointer"
+            >
+              Google orqali kirish
+            </button>
+          )}
         </form>
+        )}
 
         <p className="text-[11px] text-center text-gray-400 mt-4">
           Xavfsiz va tezkor kirish. Barcha natijalaringiz bulutda saqlanadi.

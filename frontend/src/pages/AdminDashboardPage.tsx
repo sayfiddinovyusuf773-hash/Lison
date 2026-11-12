@@ -661,6 +661,30 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ navigate
         {/* Tab 1: Overview */}
         {activeTab === 'overview' && (
           <div className="space-y-8 animate-fade-in">
+            {/* System & Integration Status */}
+            {stats?.system_status && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1020] border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                  <span className="text-xs font-bold">Email Xizmati (Resend)</span>
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${stats.system_status.email_configured ? 'bg-emerald-500/15 text-emerald-500' : 'bg-amber-500/15 text-amber-500'}`}>
+                    {stats.system_status.email_configured ? 'Ulangan' : 'Sozlanmagan'}
+                  </span>
+                </div>
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1020] border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                  <span className="text-xs font-bold">Gemini AI Ustoz</span>
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${stats.system_status.gemini_configured ? 'bg-emerald-500/15 text-emerald-500' : 'bg-amber-500/15 text-amber-500'}`}>
+                    {stats.system_status.gemini_configured ? 'Ulangan' : 'Mahalliy rejim'}
+                  </span>
+                </div>
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1020] border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                  <span className="text-xs font-bold">Google OAuth 2.0</span>
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${stats.system_status.google_oauth_configured ? 'bg-emerald-500/15 text-emerald-500' : 'bg-amber-500/15 text-amber-500'}`}>
+                    {stats.system_status.google_oauth_configured ? 'Ulangan' : 'Sozlanmagan'}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* KPI Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-5 rounded-3xl bg-white dark:bg-[#0B1020] border border-gray-100 dark:border-gray-800/80 shadow-sm space-y-1">

@@ -48,7 +48,12 @@ router.get('/overview', async (_req, res: Response): Promise<void> => {
         pending_enrollments: pendingEnrollments?.count || 0
       },
       recent_users: recentUsers,
-      recent_logs: recentLogs
+      recent_logs: recentLogs,
+      system_status: {
+        email_configured: Boolean(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim()),
+        gemini_configured: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()),
+        google_oauth_configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID.trim())
+      }
     });
   } catch (err) {
     console.error('Admin overview error:', err);

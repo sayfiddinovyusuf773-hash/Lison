@@ -149,14 +149,45 @@ export const AppContent: React.FC = () => {
   );
 };
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-[#F7F8FC] dark:bg-[#0B1020] text-[#171A2B] dark:text-[#F7F8FC]">
+          <h1 className="text-2xl font-black mb-2">Kutilmagan xatolik yuz berdi</h1>
+          <p className="text-sm text-[#5A627A] dark:text-[#9DA6BD] mb-5">
+            Sahifani qayta yuklang yoki bosh sahifaga qayting.
+          </p>
+          <button
+            onClick={() => window.location.assign('/')}
+            className="px-5 py-2.5 rounded-xl bg-[#635BFF] text-white font-bold text-sm cursor-pointer"
+          >
+            Bosh sahifaga qaytish
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
-    <LanguageProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </ThemeProvider>
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </ThemeProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }

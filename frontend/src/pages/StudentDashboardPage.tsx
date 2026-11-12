@@ -34,8 +34,13 @@ interface StudentDashboardPageProps {
 }
 
 export const StudentDashboardPage: React.FC<StudentDashboardPageProps> = ({ navigate }) => {
-  const { user, isLoading: authLoading, logout, openAuthModal } = useAuth();
+  const { user, isLoading: authLoading, logout, openAuthModal, refreshUser } = useAuth();
   const { t } = useLanguage();
+  const [verifyCode, setVerifyCode] = useState('');
+  const [verifyStep, setVerifyStep] = useState<'idle' | 'sent'>('idle');
+  const [verifyMsg, setVerifyMsg] = useState<string | null>(null);
+  const [verifyErr, setVerifyErr] = useState<string | null>(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -758,6 +763,95 @@ export const StudentDashboardPage: React.FC<StudentDashboardPageProps> = ({ navi
             </div>
           </div>
         </div>
+
+        {/* Email Verification Banner (if not yet verified) */}
+        {user.email_verified === 0 && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200">
+                Email manzilingiz ({user.email}) hali tasdiqlanmagan
+              </p>
+              <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                Hisob xavfsizligi va parolni tiklash uchun email manzilingizni tasdiqlang.
+              </p>
+              {verifyMsg && <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{verifyMsg}</p>}
+              {verifyErr && <p className="text-xs font-bold text-rose-600 dark:text-rose-400">{verifyErr}</p>}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {verifyStep === 'sent' && (
+                <>
+                  <input
+                    type="text"
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value)}
+                    placeholder="6 xonali kod"
+                    maxLength={6}
+                    className="w-28 px-3 py-2 text-xs font-bold bg-white dark:bg-gray-900 border border-amber-300 dark:border-amber-700 rounded-xl outline-none"
+                  />
+                  <button
+                    disabled={verifyLoading}
+                    onClick={async () => {
+                      setVerifyErr(null);
+                      setVerifyMsg(null);
+                      setVerifyLoading(true);
+                      try {
+                        const token = localStorage.getItem('lison_token') || localStorage.getItem('ziyo_token');
+                        const res = await fetch('/api/auth/verify-email', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                          body: JSON.stringify({ code: verifyCode.trim() })
+                        });
+                        const d = await res.json();
+                        if (d.success) {
+                          setVerifyMsg(d.message);
+                          await refreshUser();
+                        } else {
+                          setVerifyErr(d.message || 'Kod noto‘g‘ri.');
+                        }
+                      } catch {
+                        setVerifyErr('Server bilan aloqa xatosi.');
+                      } finally {
+                        setVerifyLoading(false);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer"
+                  >
+                    Tasdiqlash
+                  </button>
+                </>
+              )}
+              <button
+                disabled={verifyLoading}
+                onClick={async () => {
+                  setVerifyErr(null);
+                  setVerifyMsg(null);
+                  setVerifyLoading(true);
+                  try {
+                    const token = localStorage.getItem('lison_token') || localStorage.getItem('ziyo_token');
+                    const res = await fetch('/api/auth/send-verification', {
+                      method: 'POST',
+                      headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const d = await res.json();
+                    if (d.success) {
+                      setVerifyMsg(d.message);
+                      setVerifyStep('sent');
+                    } else {
+                      setVerifyErr(d.message || 'Tasdiqlash kodini yuborib bo‘lmadi.');
+                    }
+                  } catch {
+                    setVerifyErr('Server bilan aloqa xatosi.');
+                  } finally {
+                    setVerifyLoading(false);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
+              >
+                {verifyLoading ? 'Yuborilmoqda...' : verifyStep === 'sent' ? 'Qayta yuborish' : 'Tasdiqlash kodini yuborish'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Continue Learning Active Card */}
         {data?.continue_learning && (
