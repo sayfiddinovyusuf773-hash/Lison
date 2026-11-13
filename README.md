@@ -1,98 +1,87 @@
-# 🌟 LISON — Premium AI Language Learning Platform
+# 🌟 LISON — Kelajak tillari platformasi
 
 **LISON** — Har bir til — yangi imkoniyat.
-O'zbekiston yoshlari va jahon tillarini o'rganuvchilar uchun yaratilgan, sun'iy intellektga asoslangan zamonaviy, xavfsiz va to'liq interaktiv ta'lim platformasi.
+O‘zbekiston yoshlari va jahon tillarini o‘rganuvchilar uchun yaratilgan, sun'iy intellektga asoslangan zamonaviy, xavfsiz va to‘liq interaktiv milliy ta'lim platformasi.
 
-🌐 **Production Veb-sayt:** [https://lison.onrender.com](https://lison.onrender.com)  
-🐙 **GitHub Repozitoriy:** [https://github.com/sayfiddinovyusuf773-hash/Lison](https://github.com/sayfiddinovyusuf773-hash/Lison)
+🌐 **Production Veb-sayt:** [https://lison-8j0v.onrender.com](https://lison-8j0v.onrender.com)  
+🐙 **GitHub Repozitoriy:** [https://github.com/sayfiddinovyusufbek95-crypto/LISON](https://github.com/sayfiddinovyusufbek95-crypto/LISON)  
+🔒 **Yashirin Admin Portali:** `https://lison-8j0v.onrender.com/secure-admin-access`
 
 ---
 
 ## 🛠 Texnologiyalar Steki (Tech Stack)
 
 ### Frontend
-- **Framework:** React 18, TypeScript, Vite
-- **Styling:** Tailwind CSS v4, Maxsus Deep Navy / Indigo / Soft Purple dizayn tizimi
+- **Framework:** React 19, TypeScript, Vite
+- **Styling:** Tailwind CSS, Maxsus Deep Navy / Indigo / Soft Purple dizayn tizimi
 - **Ikonkalar:** Lucide React
 - **Animatsiyalar & UX:** Canvas Confetti, Framer Motion elementlari
-- **Multi-language:** O'zbek (UZ), Ingliz (EN), Rus (RU) interfeys tillari
-- **Mavzular:** Yorug' (Light) va Tungi (Dark) rejimlari
+- **Multi-language:** O‘zbek (UZ), Ingliz (EN), Rus (RU), Koreys (KO), Arab (AR)
+- **Mavzular:** Yorug‘ (Light) va Tungi (Dark) rejimlari
 
 ### Backend
-- **Platforma:** Node.js, Express, TypeScript
+- **Platforma:** Node.js, Express 5, TypeScript
 - **Arxitektura:** RESTful API, Role-Based Access Control (RBAC)
 - **Ma'lumotlar Bazasi:** SQLite (WAL rejimida yuqori tezlik va barqarorlik)
-- **Autentifikatsiya:** JWT (JSON Web Tokens), bcryptjs parollarni xavfsiz heshlash
+- **Autentifikatsiya:** HttpOnly Secure Cookies (`lison_session`) + Bearer JWT, `bcryptjs` parollarni heshlash
 - **AI Integratsiyasi:** Google Gemini AI API (AI Ustoz & Speaking Studio)
-- **Tashqi Xizmatlar:** YouTube Video Embed va oEmbed integratsiyasi
+- **Video & Kurslar:** YouTube Video Embed va oEmbed integratsiyasi
 
 ---
 
-## 🚀 Ishga Tushirish (Local Development)
+## 🚀 Render Cloud Deployment Sozlamalari
 
-### 1. Barcha bog'liqliklarni o'rnatish
+Yangi Render akkauntida (`sayfiddinovyusufbek95@gmail.com`) Web Service yaratish uchun quyidagi konfiguratsiya ishlatiladi:
+
+| Parametr | Qiymat |
+|---|---|
+| **Service Type** | Web Service |
+| **Runtime** | `Node` |
+| **Region** | Frankfurt (EU Central) yoki Oregon (US West) |
+| **Branch** | `main` |
+| **Root Directory** | *(Bo‘sh qoldiriladi)* |
+| **Build Command** | `npm run build` |
+| **Start Command** | `npm start` |
+| **Health Check Path**| `/api/health` |
+| **Auto-Deploy** | `Yes` |
+
+### Kerakli Environment Variables (Muhit O‘zgaruvchilari)
+
+| O‘zgaruvchi | Qiymat | Izoh |
+|---|---|---|
+| `NODE_ENV` | `production` | Production rejimi |
+| `HOST` | `0.0.0.0` | Barcha interfeyslarga ulanish |
+| `JWT_SECRET` | *(Render generatsiya qiladi)* | Sessiya shifrlash kaliti |
+| `ADMIN_EMAIL` | `admin@gmail.com` | Bosh administrator pochtasi |
+| `ADMIN_PASSWORD` | `1234` | Bosh administrator paroli |
+| `GEMINI_API_KEY` | `AIzaSy...` | Gemini AI Ustoz uchun kalit |
+| `RESEND_API_KEY` | `re_...` *(ixtiyoriy)* | Email yuborish uchun |
+
+---
+
+## 💻 Mahalliy Ishga Tushirish (Local Development)
+
+### 1. Bog‘liqliklarni o‘rnatish:
 ```bash
-npm run install:all
+npm install
+npm --prefix backend install
+npm --prefix frontend install
 ```
 
-### 2. Loyihani birgalikda ishga tushirish (Frontend + Backend)
+### 2. Frontend va Backendni birgalikda ishga tushirish:
 ```bash
 npm run dev
 ```
 
 * **Frontend:** [http://localhost:5173](http://localhost:5173)
 * **Backend API:** [http://localhost:5000](http://localhost:5000)
+* **API Health Check:** [http://localhost:5000/api/health](http://localhost:5000/api/health)
 
 ---
 
-## ☁️ Render Deployment (Production)
+## 🔒 Xavfsizlik va Autentifikatsiya
 
-Loyiha Render platformasida bitta mustahkam Web Service sifatida to'liq avtomatlashtirilgan.
-
-* **Build Command:**
-  ```bash
-  npm run build
-  ```
-* **Start Command:**
-  ```bash
-  npm start
-  ```
-* **Muhit o'zgaruvchilari (Environment Variables):**
-  * `NODE_ENV`: `production`
-  * `PORT`: `10000` (Render avtomatik belgilaydi)
-  * `HOST`: `0.0.0.0`
-  * `JWT_SECRET`: Maxfiy JWT kaliti
-  * `GEMINI_API_KEY`: Google Gemini API kaliti (AI Ustoz uchun)
-
----
-
-## 👥 Sinov Hisoblari (Demo Accounts)
-
-| Rol | Email / Login | Parol | Huquqlar |
-| :--- | :--- | :--- | :--- |
-| **Bosh Admin** | `admin@ziyo.uz` | `admin123` | Barcha kurslar, foydalanuvchilar, to'lovlar va darslar boshqaruvi |
-| **Ustoz** | `anvar.teacher@ziyo.uz` | `teacher123` | Darslarga YouTube video qo'shish, o'quvchilar natijalarini ko'rish |
-| **O'quvchi** | `student@ziyo.uz` | `student123` | Darslarni o'rganish, test va vazifalarni topshirish, AI Ustoz |
-
-*(Shuningdek, har bir o'quvchi o'zining shaxsiy Gmail pochtasi orqali bemalol ro'yxatdan o'tishi mumkin)*
-
----
-
-## 💎 Asosiy Funksional Modullar
-
-1. **Bosh Sahifa (Homepage):** Zamonaviy qahramon bo'limi, 11 ta xalqaro til kursi, interaktiv ko'rsatkichlar.
-2. **Kurslar Katalogi:** Til, daraja (A1–C2) va qidiruv bo'yicha saralash.
-3. **Video Darslik Pleyeri:** YouTube video integratsiyasi, bir bosishda YouTube'ga o'tish, dars konspektlari.
-4. **Interaktiv Testlar (Quiz Engine):** Server-tomonlama tekshirish, natijalarni saqlash va ballarni hisoblash.
-5. **Dars Topshirish Tizimi:** Darsni shunchaki belgilash taqiqlangan; o'quvchi test yoki amaliy vazifa topshirganda ustoziga va adminga to'liq hisobot yuboriladi.
-6. **Ustoz Studiyasi:** O'qituvchi o'z kursiga YouTube havolasini qo'yib, dars yaratishi va o'quvchilar natijalarini kuzatishi mumkin.
-7. **AI Ustoz:** Grammatika, yangi so'zlar va erkin muloqot bo'yicha sun'iy intellektual yordamchi.
-8. **Nutq Studyasi (Speaking Studio):** Talaffuz va so'zlashuv amaliyoti.
-9. **Reyting & Gamifikatsiya:** XP ballari, darajalar va kunlik streaklar.
-10. **Sertifikatlar:** Kursni 100% tugatganda rasmiy raqamli QR-kodli sertifikat generatsiyasi va `/verify` orqali tekshirish.
-11. **Admin Panel:** Kurslar, foydalanuvchilar, to'lov so'rovlari va tizim sozlamalari.
-
----
-
-## 📄 Litsenziya
-Ushbu loyiha LISON ta'lim platformasi uchun ishlab chiqilgan.
+- **Ro‘yxatdan o‘tish:** Ism, Familiya, Yosh (5–120), Gmail, Parol va Parolni tasdiqlash.
+- **Kirish:** Faqat Gmail va Parol.
+- **Admin paneli:** Ommaviy ko‘rinmaydi, faqat `/secure-admin-access` orqali ochiladi.
+- **Rollar:** Faqat bazadan tekshiriladi (`student`, `teacher`, `admin`, `super_admin`). Oddiy o‘quvchi admin API lariga kira olmaydi (`403 Forbidden`).
