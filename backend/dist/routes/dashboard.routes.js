@@ -122,8 +122,8 @@ router.get('/leaderboard', async (_req, res) => {
         const totalCertificates = await (0, index_1.queryOne)(`SELECT COUNT(*) as count FROM certificates WHERE is_revoked = 0`);
         const topUsers = await (0, index_1.queryAll)(`SELECT id, first_name, last_name, avatar, xp_points, level, preferred_language
        FROM users
-       WHERE role = 'student' AND is_suspended = 0 AND is_active = 1
-       ORDER BY xp_points DESC
+       WHERE role = 'student' AND role NOT IN ('admin', 'super_admin') AND email NOT LIKE '%admin%' AND is_suspended = 0 AND is_active = 1
+       ORDER BY xp_points DESC, level DESC
        LIMIT 25`);
         // Rank numbers
         const ranked = topUsers.map((u, idx) => ({

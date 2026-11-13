@@ -165,8 +165,8 @@ router.get('/leaderboard', async (_req, res: Response): Promise<void> => {
     const topUsers = await queryAll(
       `SELECT id, first_name, last_name, avatar, xp_points, level, preferred_language
        FROM users
-       WHERE role = 'student' AND is_suspended = 0 AND is_active = 1
-       ORDER BY xp_points DESC
+       WHERE role = 'student' AND role NOT IN ('admin', 'super_admin') AND email NOT LIKE '%admin%' AND is_suspended = 0 AND is_active = 1
+       ORDER BY xp_points DESC, level DESC
        LIMIT 25`
     );
 
